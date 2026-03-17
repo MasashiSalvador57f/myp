@@ -77,6 +77,7 @@ export async function sendChatMessage(
   config: AIServiceConfig,
   systemPrompt: string,
   messages: AIMessage[],
+  abortSignal?: AbortSignal,
 ): Promise<string> {
   const model = createModel(config);
 
@@ -87,6 +88,7 @@ export async function sendChatMessage(
       role: m.role as 'user' | 'assistant',
       content: m.content,
     })),
+    abortSignal,
   });
 
   return result.text;

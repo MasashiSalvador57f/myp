@@ -14,10 +14,11 @@ interface LeftSidebarTabsProps {
   projectId: string;
   onFileSelect?: (file: ManuscriptFile) => void;
   onCreateFile?: (filename: string) => void;
+  onRenameFile?: (file: ManuscriptFile, newName: string) => void;
   onOpenChatSession?: (sessionId: string) => void;
 }
 
-export function LeftSidebarTabs({ projectId, onFileSelect, onCreateFile, onOpenChatSession }: LeftSidebarTabsProps) {
+export function LeftSidebarTabs({ projectId, onFileSelect, onCreateFile, onRenameFile, onOpenChatSession }: LeftSidebarTabsProps) {
   const [tab, setTab] = useState(0);
 
   return (
@@ -44,7 +45,7 @@ export function LeftSidebarTabs({ projectId, onFileSelect, onCreateFile, onOpenC
       </Tabs>
       <Box sx={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {tab === 0 ? (
-          <FileList onFileSelect={onFileSelect} onCreateFile={onCreateFile} />
+          <FileList onFileSelect={onFileSelect} onCreateFile={onCreateFile} onRenameFile={onRenameFile} />
         ) : tab === 1 ? (
           <MemoPanel projectId={projectId} onOpenChatSession={onOpenChatSession} />
         ) : (

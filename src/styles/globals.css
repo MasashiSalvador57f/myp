@@ -531,7 +531,8 @@ select {
 /* --- Chat Markdown Styles --- */
 
 .chat-markdown p {
-  margin: 0.25em 0;
+  margin: 0.6em 0;
+  line-height: 1.8;
 }
 
 .chat-markdown h1,
@@ -539,7 +540,7 @@ select {
 .chat-markdown h3,
 .chat-markdown h4 {
   font-weight: 600;
-  margin: 0.5em 0 0.25em;
+  margin: 1em 0 0.4em;
 }
 
 .chat-markdown h1 { font-size: 1.1em; }
@@ -548,12 +549,13 @@ select {
 
 .chat-markdown ul,
 .chat-markdown ol {
-  margin: 0.25em 0;
+  margin: 0.5em 0;
   padding-left: 1.5em;
 }
 
 .chat-markdown li {
-  margin: 0.15em 0;
+  margin: 0.3em 0;
+  line-height: 1.8;
 }
 
 .chat-markdown code {
@@ -580,14 +582,15 @@ select {
 .chat-markdown blockquote {
   border-left: 3px solid var(--border-default);
   padding-left: 0.75em;
-  margin: 0.5em 0;
+  margin: 0.8em 0;
   color: var(--text-secondary);
+  line-height: 1.8;
 }
 
 .chat-markdown hr {
   border: none;
   border-top: 1px solid var(--border-subtle);
-  margin: 0.5em 0;
+  margin: 0.8em 0;
 }
 
 .chat-markdown strong {
@@ -611,7 +614,8 @@ select {
 .chat-markdown th,
 .chat-markdown td {
   border: 1px solid var(--border-default);
-  padding: 0.3em 0.6em;
+  padding: 0.4em 0.75em;
+  line-height: 1.6;
 }
 
 .chat-markdown th {

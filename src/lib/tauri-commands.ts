@@ -109,8 +109,8 @@ export async function renameChapter(
 ): Promise<void> {
   return invoke("rename_chapter", {
     projectId,
-    oldName,
-    newName,
+    oldName: oldName,
+    newName: newName,
   });
 }
 

@@ -16,6 +16,7 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import StopIcon from "@mui/icons-material/Stop";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button, Modal } from "../ui";
@@ -80,6 +81,12 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
   const [selectionToolbar, setSelectionToolbar] = useState<{ x: number; y: number; text: string } | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // 実行中のAbortControllerを管理
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+
+  // 停止確認
+  const [stopTargetId, setStopTargetId] = useState<string | null>(null);
 
   // メモ追記モーダル
   const [appendOpen, setAppendOpen] = useState(false);
@@ -200,6 +207,16 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
 
   const runningCount = history.filter((h) => h.status === "running").length;
 
+  /** 実行中のエージェントを停止し、一覧から削除 */
+  const handleStop = useCallback((executionId: string) => {
+    const controller = abortControllersRef.current.get(executionId);
+    if (controller) {
+      controller.abort();
+      abortControllersRef.current.delete(executionId);
+    }
+    setHistory((prev) => prev.filter((h) => h.id !== executionId));
+  }, []);
+
   /** ファイルキーからラベルを取得 */
   const getFileLabel = useCallback(
     (fileKey: string): string => {
@@ -266,6 +283,9 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
       startedAt: new Date().toISOString(),
     };
 
+    const abortController = new AbortController();
+    abortControllersRef.current.set(executionId, abortController);
+
     setHistory((prev) => [newExecution, ...prev]);
 
     // 非同期でAI実行
@@ -306,8 +326,9 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
         },
       ];
 
-      const result = await sendAI(aiConfig, systemPrompt, aiMessages);
+      const result = await sendAI(aiConfig, systemPrompt, aiMessages, abortController.signal);
 
+      abortControllersRef.current.delete(executionId);
       setHistory((prev) =>
         prev.map((h) =>
           h.id === executionId
@@ -321,6 +342,10 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
         )
       );
     } catch (e) {
+      abortControllersRef.current.delete(executionId);
+      // 停止された場合は一覧から削除済みなので何もしない
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      if (abortController.signal.aborted) return;
       setHistory((prev) =>
         prev.map((h) =>
           h.id === executionId
@@ -610,18 +635,33 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
                   <Typography variant="caption" color="text.disabled">
                     → {exec.fileLabel}
                   </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.disabled"
-                    sx={{ ml: "auto", fontSize: "0.6rem" }}
-                  >
-                    {new Date(exec.startedAt).toLocaleString("ja-JP", {
-                      month: "numeric",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </Typography>
+                  <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 0.5 }}>
+                    {exec.status === "running" && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStopTargetId(exec.id);
+                        }}
+                        title="停止"
+                        sx={{ p: 0.25 }}
+                      >
+                        <StopIcon sx={{ fontSize: 14, color: "error.main" }} />
+                      </IconButton>
+                    )}
+                    <Typography
+                      variant="caption"
+                      color="text.disabled"
+                      sx={{ fontSize: "0.6rem" }}
+                    >
+                      {new Date(exec.startedAt).toLocaleString("ja-JP", {
+                        month: "numeric",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </Typography>
+                  </Box>
                 </Box>
                 {exec.status !== "running" && exec.result && (
                   <Typography
@@ -653,6 +693,33 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
           </Box>
         </Box>
       )}
+
+      {/* 停止確認モーダル */}
+      <Modal
+        open={!!stopTargetId}
+        onClose={() => setStopTargetId(null)}
+        title="エージェントの停止"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setStopTargetId(null)}>
+              キャンセル
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                if (stopTargetId) handleStop(stopTargetId);
+                setStopTargetId(null);
+              }}
+            >
+              停止する
+            </Button>
+          </>
+        }
+      >
+        <Typography variant="body2" color="text.secondary">
+          実行中のエージェントを停止しますか？停止すると結果は破棄されます。
+        </Typography>
+      </Modal>
     </Box>
   );
 }

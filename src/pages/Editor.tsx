@@ -187,6 +187,31 @@ export default function EditorPage() {
     [projectId, currentFile, recordWriting],
   );
 
+  const handleRenameFile = useCallback(
+    (file: ManuscriptFile, newName: string) => {
+      if (!projectId) return;
+      const finalName = newName.endsWith('.txt') ? newName : `${newName}.txt`;
+      // リネーム前に未保存内容を保存してからリネーム（古いファイル名での保存が後から走るのを防ぐ）
+      void saveCurrentIfDirty().then(() => {
+        commands
+          .renameChapter(projectId, file.filename, finalName)
+          .then(() => commands.getProject(projectId))
+          .then((result) => {
+            setFiles(result.manuscripts);
+            // リネームしたファイルが現在開いているファイルなら選択し直す
+            if (currentFile?.filename === file.filename) {
+              const renamed = result.manuscripts.find((f) => f.filename === finalName);
+              if (renamed) selectFile(renamed);
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to rename file:', err);
+          });
+      });
+    },
+    [projectId, setFiles, currentFile, selectFile, saveCurrentIfDirty],
+  );
+
   const handleCreateFile = useCallback(
     (filename: string) => {
       if (!projectId) return;
@@ -269,12 +294,14 @@ export default function EditorPage() {
             projectId={projectId}
             onFileSelect={selectFile}
             onCreateFile={handleCreateFile}
+            onRenameFile={handleRenameFile}
             onOpenChatSession={handleOpenChatSession}
           />
         ) : (
           <FileList
             onFileSelect={selectFile}
             onCreateFile={handleCreateFile}
+            onRenameFile={handleRenameFile}
           />
         )
       }
