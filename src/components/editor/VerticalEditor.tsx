@@ -275,9 +275,13 @@ export function VerticalEditor({
 
       // --- Enter ---
       if (e.key === 'Enter') {
-        // IME変換中、または変換確定直後のEnterは無視する
-        if (composingRef.current) return;
-        if (Date.now() - compositionEndTimeRef.current < COMPOSITION_END_GRACE_MS) return;
+        // IME変換中のEnter — ブラウザに任せる（compositionendで処理）
+        if (composingRef.current || e.nativeEvent.isComposing) return;
+        // 変換確定直後のEnter — 改行せず、かつtextareaへの\n挿入も防ぐ
+        if (Date.now() - compositionEndTimeRef.current < COMPOSITION_END_GRACE_MS) {
+          e.preventDefault();
+          return;
+        }
         e.preventDefault();
         if (selection) {
           const selStart = Math.min(selection.start, selection.end);
@@ -476,6 +480,10 @@ export function VerticalEditor({
       const inputText = ta.value;
       if (!inputText) return;
       ta.value = '';
+
+      // 改行はhandleKeyDownのEnter処理でのみ挿入する。
+      // IME確定時のEnterでtextareaに\nが入ることがあるが、ここでは無視する。
+      if (inputText === '\n' || inputText === '\r\n' || inputText === '\r') return;
 
       setModel((prev) => {
         const s = prev.selection;
