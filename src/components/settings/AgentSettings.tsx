@@ -12,6 +12,7 @@ import MuiButton from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import type { PresetAgent } from "../../types";
 import { PRESET_AGENTS } from "../../stores/chatStore";
 
@@ -56,6 +57,7 @@ export function AgentSettings() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<CustomAgent | null>(null);
   const [form, setForm] = useState({ name: "", description: "", system_prompt: "" });
+  const [detailAgent, setDetailAgent] = useState<(PresetAgent & { isCustom?: boolean }) | null>(null);
 
   useEffect(() => {
     saveCustomAgents(customAgents);
@@ -97,6 +99,75 @@ export function AgentSettings() {
     setCustomAgents((prev) => prev.filter((a) => a.id !== id));
   };
 
+  // 詳細ビュー
+  if (detailAgent) {
+    const isCustom = !!(detailAgent as CustomAgent & { isCustom?: boolean }).isCustom;
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <IconButton size="small" onClick={() => setDetailAgent(null)} title="一覧に戻る">
+            <ArrowBackIcon fontSize="small" />
+          </IconButton>
+          <Typography variant="body2" fontWeight={500} color="text.primary">
+            {detailAgent.name}
+          </Typography>
+          <Chip
+            label={isCustom ? "カスタム" : "プリセット"}
+            size="small"
+            color={isCustom ? "primary" : "default"}
+            sx={{ fontSize: "0.6rem", height: 18 }}
+          />
+        </Box>
+        <Box>
+          <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: "block", mb: 0.5, letterSpacing: "0.04em" }}>
+            役割
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {detailAgent.description}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: "block", mb: 0.5, letterSpacing: "0.04em" }}>
+            システムプロンプト
+          </Typography>
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: "var(--radius-lg)",
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "var(--bg-tertiary)",
+              maxHeight: 400,
+              overflow: "auto",
+            }}
+          >
+            <Typography variant="caption" color="text.primary" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>
+              {detailAgent.system_prompt}
+            </Typography>
+          </Box>
+        </Box>
+        {isCustom && (
+          <Box display="flex" gap={1}>
+            <MuiButton
+              size="small"
+              variant="outlined"
+              onClick={() => {
+                const custom = customAgents.find((a) => a.id === detailAgent.id);
+                if (custom) {
+                  handleOpenEdit(custom);
+                  setDetailAgent(null);
+                }
+              }}
+              sx={{ textTransform: "none" }}
+            >
+              編集
+            </MuiButton>
+          </Box>
+        )}
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* プリセットエージェント */}
@@ -108,12 +179,16 @@ export function AgentSettings() {
           {PRESET_AGENTS.map((agent) => (
             <Box
               key={agent.id}
+              onClick={() => setDetailAgent(agent)}
               sx={{
                 p: 1.5,
                 borderRadius: "var(--radius-lg)",
                 border: "1px solid",
                 borderColor: "divider",
                 bgcolor: "var(--bg-tertiary)",
+                cursor: "pointer",
+                transition: "border-color 0.15s",
+                "&:hover": { borderColor: "text.disabled" },
               }}
             >
               <Box display="flex" alignItems="center" gap={1} mb={0.5}>
@@ -153,12 +228,16 @@ export function AgentSettings() {
             {customAgents.map((agent) => (
               <Box
                 key={agent.id}
+                onClick={() => setDetailAgent({ ...agent, isCustom: true })}
                 sx={{
                   p: 1.5,
                   borderRadius: "var(--radius-lg)",
                   border: "1px solid",
                   borderColor: "primary.main",
                   bgcolor: "var(--accent-subtle)",
+                  cursor: "pointer",
+                  transition: "border-color 0.15s",
+                  "&:hover": { borderColor: "primary.dark" },
                 }}
               >
                 <Box display="flex" alignItems="center" justifyContent="space-between" mb={0.5}>
@@ -168,7 +247,7 @@ export function AgentSettings() {
                     </Typography>
                     <Chip label="カスタム" size="small" color="primary" sx={{ fontSize: "0.6rem", height: 18 }} />
                   </Box>
-                  <Box display="flex" gap={0.5}>
+                  <Box display="flex" gap={0.5} onClick={(e) => e.stopPropagation()}>
                     <IconButton size="small" onClick={() => handleOpenEdit(agent)} title="編集">
                       <EditIcon sx={{ fontSize: 14 }} />
                     </IconButton>

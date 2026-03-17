@@ -3,8 +3,10 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { Button, Input, Textarea, Modal } from "../ui";
 import { useSettingsStore } from "../../stores/settingsStore";
 import type { CustomPrompt } from "../../types";
@@ -25,6 +27,7 @@ export function PromptManager() {
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState<PromptFormData>(EMPTY_FORM);
   const [deleteTarget, setDeleteTarget] = useState<CustomPrompt | null>(null);
+  const [detailPrompt, setDetailPrompt] = useState<CustomPrompt | null>(null);
 
   const openNew = () => {
     setForm(EMPTY_FORM);
@@ -57,6 +60,59 @@ export function PromptManager() {
 
   const isOpen = isNew || !!editTarget;
 
+  // 詳細ビュー
+  if (detailPrompt) {
+    return (
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <IconButton size="small" onClick={() => setDetailPrompt(null)} title="一覧に戻る">
+            <ArrowBackIcon fontSize="small" />
+          </IconButton>
+          <Typography variant="body2" fontWeight={500} color="text.primary">
+            {detailPrompt.name}
+          </Typography>
+          <Chip
+            label={detailPrompt.scope === "global" ? "グローバル" : "プロジェクト"}
+            size="small"
+            sx={{ fontSize: "0.625rem", height: 20 }}
+          />
+        </Box>
+        <Box>
+          <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: "block", mb: 0.5, letterSpacing: "0.04em" }}>
+            プロンプト内容
+          </Typography>
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: "var(--radius-lg)",
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "var(--bg-tertiary)",
+              maxHeight: 400,
+              overflow: "auto",
+            }}
+          >
+            <Typography variant="caption" color="text.primary" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.7 }}>
+              {detailPrompt.content}
+            </Typography>
+          </Box>
+        </Box>
+        <Box display="flex" gap={1}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              openEdit(detailPrompt);
+              setDetailPrompt(null);
+            }}
+          >
+            編集
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
+
   return (
     <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
@@ -80,7 +136,17 @@ export function PromptManager() {
           <Paper
             key={prompt.id}
             variant="outlined"
-            sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5, borderRadius: 'var(--radius-lg)' }}
+            onClick={() => setDetailPrompt(prompt)}
+            sx={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 1.5,
+              p: 1.5,
+              borderRadius: 'var(--radius-lg)',
+              cursor: 'pointer',
+              transition: 'border-color 0.15s',
+              '&:hover': { borderColor: 'text.disabled' },
+            }}
           >
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Box display="flex" alignItems="center" gap={1} mb={0.5}>
@@ -102,7 +168,7 @@ export function PromptManager() {
                 {prompt.content}
               </Typography>
             </Box>
-            <Box display="flex" gap={0.5} sx={{ flexShrink: 0 }}>
+            <Box display="flex" gap={0.5} sx={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
               <Button variant="ghost" size="sm" onClick={() => openEdit(prompt)}>
                 編集
               </Button>
