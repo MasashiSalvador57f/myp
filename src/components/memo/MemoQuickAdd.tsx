@@ -9,6 +9,7 @@ import FormControl from "@mui/material/FormControl";
 import { Button } from "../ui";
 import { useProjectStore } from "../../stores/projectStore";
 import * as commands from "../../lib/tauri-commands";
+import { emit } from "../../lib/events";
 
 interface MemoQuickAddProps {
   onCreated: () => void;
@@ -36,6 +37,7 @@ export function MemoQuickAdd({ onCreated }: MemoQuickAddProps) {
       );
       setTitle("");
       setBody("");
+      emit("memo:changed");
       onCreated();
     } catch (e) {
       console.error("メモ作成に失敗:", e);

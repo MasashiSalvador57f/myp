@@ -28,6 +28,7 @@ import {
   type AIMessage,
 } from "../../lib/ai-service";
 import * as commands from "../../lib/tauri-commands";
+import { emit } from "../../lib/events";
 import type { ManuscriptFile, MemoInfo } from "../../types";
 
 interface TaskCandidate {
@@ -209,6 +210,7 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
         ? `\n\n---\n🤖 エージェント: ${detailExecution.agentName} → ${detailExecution.fileLabel}`
         : "";
       await commands.createMemo(title, content + execInfo, projectId);
+      emit("memo:changed");
     } catch (e) {
       console.error("メモの作成に失敗:", e);
     }
@@ -240,6 +242,7 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
         ? `${detail.body}\n\n---\n\n${appendContent}${execInfo}`
         : `${appendContent}${execInfo}`;
       await commands.updateMemo(memo.filename, detail.title, newBody, detail.project_id);
+      emit("memo:changed");
       setAppendOpen(false);
       setAppendContent("");
     } catch (e) {
@@ -286,6 +289,7 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
         }
       }
       setCheckedTasks(new Set());
+      emit("task:changed");
     } catch (e) {
       console.error("タスクの追加に失敗:", e);
     } finally {

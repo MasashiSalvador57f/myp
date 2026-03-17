@@ -15,6 +15,7 @@ import MuiButton from "@mui/material/Button";
 import type { MemoInfo, MemoDetail } from "../../types/memo";
 import { useProjectStore } from "../../stores/projectStore";
 import * as commands from "../../lib/tauri-commands";
+import { emit } from "../../lib/events";
 
 interface MemoListProps {
   memos: MemoInfo[];
@@ -57,6 +58,7 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
       try {
         await commands.updateMemo(openFile, editTitle.trim() || "(無題)", editBody, editProjectId || null);
         setDirty(false);
+        emit("memo:changed");
         onUpdated();
       } catch (e) {
         console.error("メモの更新に失敗:", e);
@@ -89,6 +91,7 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
       setOpenFile(null);
       setDetail(null);
       setDirty(false);
+      emit("memo:changed");
       onDeleted();
     } catch (e) {
       console.error("メモの削除に失敗:", e);

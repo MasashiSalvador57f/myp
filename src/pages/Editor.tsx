@@ -7,6 +7,7 @@ import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import ViewSidebarOutlinedIcon from '@mui/icons-material/ViewSidebarOutlined';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import Tooltip from '@mui/material/Tooltip';
+import TuneIcon from '@mui/icons-material/Tune';
 import { useEditorStore } from '@/stores/editorStore';
 import { useWritingLogStore } from '@/stores/writingLogStore';
 import { Editor } from '@/components/editor/Editor';
@@ -45,6 +46,7 @@ export default function EditorPage() {
   const { sessions, switchSession, loadSessionsFromDisk } = useChatStore();
 
   const [focusMode, setFocusMode] = useState(false);
+  const [showToolbar, setShowToolbar] = useState(true);
 
   // ESCでフォーカスモード解除
   useEffect(() => {
@@ -258,6 +260,15 @@ export default function EditorPage() {
               {currentFile?.filename ?? 'ファイル未選択'}
             </Typography>
             <Box sx={{ flex: 1 }} />
+            <Tooltip title="ツールバー" arrow>
+              <IconButton
+                size="small"
+                onClick={() => setShowToolbar((v) => !v)}
+                sx={{ color: showToolbar ? 'text.primary' : 'text.disabled' }}
+              >
+                <TuneIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="フォーカスモード" arrow>
               <IconButton
                 size="small"
@@ -285,7 +296,7 @@ export default function EditorPage() {
             </IconButton>
           </Box>
           {/* Editor toolbar */}
-          <EditorToolbar />
+          {showToolbar && <EditorToolbar />}
         </Box>
       }
       leftSidebar={

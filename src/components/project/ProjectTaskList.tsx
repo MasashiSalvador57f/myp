@@ -8,6 +8,7 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CheckBoxOutlinedIcon from "@mui/icons-material/CheckBoxOutlined";
 import type { TaskInfo } from "../../types/task";
 import * as commands from "../../lib/tauri-commands";
+import { emit, on } from "../../lib/events";
 
 interface ProjectTaskListProps {
   projectId: string;
@@ -31,13 +32,14 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
 
   useEffect(() => {
     loadTasks();
+    return on("task:changed", loadTasks);
   }, [loadTasks]);
 
   const handleToggleDone = async (task: TaskInfo) => {
     try {
       const d = await commands.readTask(task.filename);
       await commands.updateTask(task.filename, d.title, d.body, !task.done, projectId);
-      loadTasks();
+      emit("task:changed");
     } catch (e) {
       console.error("タスクの完了切替に失敗:", e);
     }
@@ -46,7 +48,7 @@ export function ProjectTaskList({ projectId }: ProjectTaskListProps) {
   const handleDelete = async (filename: string) => {
     try {
       await commands.deleteTask(filename);
-      loadTasks();
+      emit("task:changed");
     } catch (e) {
       console.error("タスクの削除に失敗:", e);
     }

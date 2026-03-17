@@ -12,6 +12,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import type { MemoInfo, MemoDetail } from '@/types/memo';
 import * as commands from '@/lib/tauri-commands';
+import { emit, on } from '@/lib/events';
 
 interface MemoPanelProps {
   projectId: string;
@@ -48,6 +49,7 @@ export function MemoPanel({ projectId, onOpenChatSession }: MemoPanelProps) {
 
   useEffect(() => {
     loadMemos();
+    return on("memo:changed", loadMemos);
   }, [loadMemos]);
 
   const handleToggle = async (filename: string) => {
@@ -77,7 +79,7 @@ export function MemoPanel({ projectId, onOpenChatSession }: MemoPanelProps) {
     try {
       await commands.updateMemo(expandedFile, editTitle.trim() || '(無題)', editBody, projectId);
       setDirty(false);
-      loadMemos();
+      emit("memo:changed");
     } catch (e) {
       console.error('メモの更新に失敗:', e);
     }
@@ -96,7 +98,7 @@ export function MemoPanel({ projectId, onOpenChatSession }: MemoPanelProps) {
         setExpandedFile(null);
         setDetail(null);
       }
-      loadMemos();
+      emit("memo:changed");
     } catch (e) {
       console.error('メモの削除に失敗:', e);
     }
@@ -109,7 +111,7 @@ export function MemoPanel({ projectId, onOpenChatSession }: MemoPanelProps) {
       setNewTitle('');
       setNewBody('');
       setAdding(false);
-      loadMemos();
+      emit("memo:changed");
     } catch (e) {
       console.error('メモの作成に失敗:', e);
     }

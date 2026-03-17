@@ -12,6 +12,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloseIcon from '@mui/icons-material/Close';
 import type { TaskInfo, TaskDetail } from '@/types/task';
 import * as commands from '@/lib/tauri-commands';
+import { emit, on } from '@/lib/events';
 
 interface TaskPanelProps {
   projectId: string;
@@ -45,6 +46,7 @@ export function TaskPanel({ projectId }: TaskPanelProps) {
 
   useEffect(() => {
     loadTasks();
+    return on("task:changed", loadTasks);
   }, [loadTasks]);
 
   // 未完了タスクを上、完了タスクを下に並べる
@@ -90,7 +92,7 @@ export function TaskPanel({ projectId }: TaskPanelProps) {
         projectId
       );
       setDirty(false);
-      loadTasks();
+      emit("task:changed");
     } catch (e) {
       console.error('タスクの更新に失敗:', e);
     }
@@ -126,7 +128,7 @@ export function TaskPanel({ projectId }: TaskPanelProps) {
           projectId
         );
       }
-      loadTasks();
+      emit("task:changed");
     } catch (e2) {
       console.error('タスクの完了切替に失敗:', e2);
     }
@@ -139,7 +141,7 @@ export function TaskPanel({ projectId }: TaskPanelProps) {
         setExpandedFile(null);
         setDetail(null);
       }
-      loadTasks();
+      emit("task:changed");
     } catch (e) {
       console.error('タスクの削除に失敗:', e);
     }
@@ -152,7 +154,7 @@ export function TaskPanel({ projectId }: TaskPanelProps) {
       setNewTitle('');
       setNewBody('');
       setAdding(false);
-      loadTasks();
+      emit("task:changed");
     } catch (e) {
       console.error('タスクの作成に失敗:', e);
     }

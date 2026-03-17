@@ -4,8 +4,10 @@ import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { ChatHistory } from "./ChatHistory";
 import { useChatStore } from "../../stores/chatStore";
+import { getAllAgents } from "../settings/AgentSettings";
 import type { ChatSession, MemoInfo } from "../../types";
 import * as commands from "../../lib/tauri-commands";
+import { emit } from "../../lib/events";
 
 interface ChatPanelProps {
   projectId: string;
@@ -25,7 +27,10 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
     saveCurrentSession,
     loadSessionsFromDisk,
     switchSession,
+    selectAgent,
   } = useChatStore();
+
+  const allAgents = getAllAgents();
 
   const [showHistory, setShowHistory] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -124,6 +129,7 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
       const sessionId = currentSession?.id ?? "";
       const link = sessionId ? `\n\n---\n📎 チャットセッション: ${sessionId}` : "";
       await commands.createMemo(title, content + link, projectId);
+      emit("memo:changed");
     } catch (e) {
       console.error("メモの作成に失敗:", e);
     }
@@ -172,6 +178,7 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
         ? `${detail.body}\n\n---\n\n${appendContent}${link}`
         : `${appendContent}${link}`;
       await commands.updateMemo(memo.filename, detail.title, newBody, detail.project_id);
+      emit("memo:changed");
       setAppendOpen(false);
       setAppendContent("");
     } catch (e) {
@@ -335,6 +342,29 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
                 </button>
               </div>
             )}
+          </div>
+
+          {/* エージェント選択 */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 border-t border-[var(--border-subtle)]">
+            <span className="text-[10px] text-[var(--text-tertiary)] shrink-0">エージェント:</span>
+            <select
+              value={selectedAgentId}
+              onChange={(e) => selectAgent(e.target.value)}
+              disabled={!!currentSession && currentSession.messages.length > 0}
+              className={[
+                "flex-1 bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[var(--radius-md)]",
+                "px-2 py-1 text-[11px] text-[var(--text-primary)]",
+                "focus:outline-none focus:border-[var(--border-focus)]",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+              ].join(" ")}
+            >
+              <option value="">- (未設定)</option>
+              {allAgents.map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* 入力エリア */}

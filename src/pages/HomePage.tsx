@@ -18,6 +18,7 @@ import { useWritingLogStore } from "../stores/writingLogStore";
 import { useTheme } from "../components/ui/ThemeProvider";
 import type { MemoInfo } from "../types/memo";
 import * as commands from "../lib/tauri-commands";
+import { on } from "../lib/events";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import SettingsIcon from "@mui/icons-material/Settings";
@@ -60,6 +61,7 @@ export default function HomePage() {
     loadProjects();
     loadDashboardData();
     loadMemos();
+    return on("memo:changed", loadMemos);
   }, []);
 
   const total7Days = weeklySummary?.total_chars ?? 0;
