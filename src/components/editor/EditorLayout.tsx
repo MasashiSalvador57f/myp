@@ -23,6 +23,7 @@ interface EditorLayoutProps {
   leftSidebar: ReactNode;
   editor: ReactNode;
   rightPanel?: ReactNode;
+  focusMode?: boolean;
 }
 
 export function EditorLayout({
@@ -30,6 +31,7 @@ export function EditorLayout({
   leftSidebar,
   editor,
   rightPanel,
+  focusMode = false,
 }: EditorLayoutProps) {
   const {
     leftSidebarOpen,
@@ -106,9 +108,13 @@ export function EditorLayout({
     };
   }, [leftWidth, rightWidth]);
 
+  const showLeft = leftSidebarOpen && !focusMode;
+  const showRight = rightSidebarOpen && !focusMode;
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'var(--bg-primary)' }}>
-      {toolbar}
+      {/* ツールバー: フォーカスモード時は非表示 */}
+      {!focusMode && toolbar}
 
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {/* Left sidebar */}
@@ -120,10 +126,10 @@ export function EditorLayout({
             borderColor: 'divider',
             bgcolor: 'var(--bg-secondary)',
             overflow: 'hidden',
-            width: leftSidebarOpen ? leftWidth : 0,
+            width: showLeft ? leftWidth : 0,
             transition: draggingRef.current === 'left' ? 'none' : 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
           }}
-          aria-hidden={!leftSidebarOpen}
+          aria-hidden={!showLeft}
         >
           <Box sx={{ width: leftWidth, height: '100%' }}>
             {leftSidebar}
@@ -131,7 +137,7 @@ export function EditorLayout({
         </Box>
 
         {/* Left resize handle */}
-        {leftSidebarOpen && (
+        {showLeft && (
           <Box
             onMouseDown={(e) => handleMouseDown('left', e)}
             sx={{
@@ -152,7 +158,7 @@ export function EditorLayout({
         </Box>
 
         {/* Right resize handle */}
-        {rightPanel && rightSidebarOpen && (
+        {rightPanel && showRight && (
           <Box
             onMouseDown={(e) => handleMouseDown('right', e)}
             sx={{
@@ -177,10 +183,10 @@ export function EditorLayout({
               borderColor: 'divider',
               bgcolor: 'var(--bg-secondary)',
               overflow: 'hidden',
-              width: rightSidebarOpen ? rightWidth : 0,
+              width: showRight ? rightWidth : 0,
               transition: draggingRef.current === 'right' ? 'none' : 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
             }}
-            aria-hidden={!rightSidebarOpen}
+            aria-hidden={!showRight}
           >
             <Box sx={{ width: rightWidth, height: '100%' }}>
               {rightPanel}

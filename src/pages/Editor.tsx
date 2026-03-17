@@ -1,10 +1,12 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
 import ViewSidebarOutlinedIcon from '@mui/icons-material/ViewSidebarOutlined';
+import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
+import Tooltip from '@mui/material/Tooltip';
 import { useEditorStore } from '@/stores/editorStore';
 import { useWritingLogStore } from '@/stores/writingLogStore';
 import { Editor } from '@/components/editor/Editor';
@@ -35,6 +37,21 @@ export default function EditorPage() {
   } = useEditorStore();
 
   const { sessions, switchSession } = useChatStore();
+
+  const [focusMode, setFocusMode] = useState(false);
+
+  // ESCでフォーカスモード解除
+  useEffect(() => {
+    if (!focusMode) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setFocusMode(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [focusMode]);
 
   // メモのチャットリンクからセッションを開く
   const handleOpenChatSession = useCallback((sessionId: string) => {
@@ -161,6 +178,7 @@ export default function EditorPage() {
 
   return (
     <EditorLayout
+      focusMode={focusMode}
       toolbar={
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           {/* Navigation bar */}
@@ -182,6 +200,15 @@ export default function EditorPage() {
               {currentFile?.filename ?? 'ファイル未選択'}
             </Typography>
             <Box sx={{ flex: 1 }} />
+            <Tooltip title="フォーカスモード" arrow>
+              <IconButton
+                size="small"
+                onClick={() => setFocusMode(true)}
+                sx={{ color: 'text.secondary' }}
+              >
+                <CenterFocusStrongIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <IconButton
               size="small"
               onClick={toggleLeftSidebar}
