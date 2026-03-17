@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { ChatMessage as ChatMessageType } from "../../types";
 
 interface ChatMessageProps {
@@ -47,7 +48,7 @@ export function ChatMessage({ message, onSaveAsMemo, onAppendToMemo }: ChatMessa
           {isUser ? (
             message.content
           ) : (
-            <ReactMarkdown>{message.content}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
           )}
         </div>
 

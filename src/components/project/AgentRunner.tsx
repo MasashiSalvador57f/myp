@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import MenuItem from "@mui/material/MenuItem";
@@ -16,7 +16,9 @@ import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import { Button } from "../ui";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Button, Modal } from "../ui";
 import { getAllAgents } from "../settings/AgentSettings";
 import {
   sendChatMessage as sendAI,
@@ -74,6 +76,17 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
     null
   );
 
+  // テキスト選択ツールバー
+  const [selectionToolbar, setSelectionToolbar] = useState<{ x: number; y: number; text: string } | null>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // メモ追記モーダル
+  const [appendOpen, setAppendOpen] = useState(false);
+  const [appendContent, setAppendContent] = useState("");
+  const [memoList, setMemoList] = useState<MemoInfo[]>([]);
+  const [memoLoading, setMemoLoading] = useState(false);
+
   // メモ一覧を読み込み
   useEffect(() => {
     commands.listMemos().then((allMemos) => {
@@ -90,6 +103,100 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
   useEffect(() => {
     saveHistory(projectId, history);
   }, [projectId, history]);
+
+  // テキスト選択検知
+  useEffect(() => {
+    const handleMouseUp = (e: MouseEvent) => {
+      if (toolbarRef.current && toolbarRef.current.contains(e.target as Node)) return;
+      setTimeout(() => {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+          setSelectionToolbar(null);
+          return;
+        }
+        const container = resultRef.current;
+        if (!container) return;
+        const anchorNode = sel.anchorNode;
+        if (!anchorNode || !container.contains(anchorNode)) {
+          setSelectionToolbar(null);
+          return;
+        }
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        setSelectionToolbar({
+          x: rect.left - containerRect.left + rect.width / 2,
+          y: rect.top - containerRect.top + container.scrollTop - 4,
+          text: sel.toString(),
+        });
+      }, 10);
+    };
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => document.removeEventListener("mouseup", handleMouseUp);
+  }, []);
+
+  // メモにする
+  const handleSaveAsMemo = useCallback(async (content: string) => {
+    try {
+      const title = content.split("\n")[0].slice(0, 50) || "エージェント実行メモ";
+      const execInfo = detailExecution
+        ? `\n\n---\n🤖 エージェント: ${detailExecution.agentName} → ${detailExecution.fileLabel}`
+        : "";
+      await commands.createMemo(title, content + execInfo, projectId);
+    } catch (e) {
+      console.error("メモの作成に失敗:", e);
+    }
+  }, [projectId, detailExecution]);
+
+  // メモに追記 - モーダルを開く
+  const handleOpenAppend = useCallback(async (content: string) => {
+    setAppendContent(content);
+    setMemoLoading(true);
+    setAppendOpen(true);
+    try {
+      const all = await commands.listMemos();
+      setMemoList(all.filter((m) => m.project_id === projectId || !m.project_id));
+    } catch {
+      setMemoList([]);
+    } finally {
+      setMemoLoading(false);
+    }
+  }, [projectId]);
+
+  // メモに追記 - 実行
+  const handleAppendToMemo = useCallback(async (memo: MemoInfo) => {
+    try {
+      const detail = await commands.readMemo(memo.filename);
+      const execInfo = detailExecution
+        ? `\n🤖 エージェント: ${detailExecution.agentName} → ${detailExecution.fileLabel}`
+        : "";
+      const newBody = detail.body
+        ? `${detail.body}\n\n---\n\n${appendContent}${execInfo}`
+        : `${appendContent}${execInfo}`;
+      await commands.updateMemo(memo.filename, detail.title, newBody, detail.project_id);
+      setAppendOpen(false);
+      setAppendContent("");
+    } catch (e) {
+      console.error("メモへの追記に失敗:", e);
+    }
+  }, [appendContent, detailExecution]);
+
+  // 選択ツールバーのアクション
+  const handleSelectionToMemo = useCallback(() => {
+    if (!selectionToolbar) return;
+    const text = selectionToolbar.text;
+    setSelectionToolbar(null);
+    window.getSelection()?.removeAllRanges();
+    void handleSaveAsMemo(text);
+  }, [selectionToolbar, handleSaveAsMemo]);
+
+  const handleSelectionAppend = useCallback(() => {
+    if (!selectionToolbar) return;
+    const text = selectionToolbar.text;
+    setSelectionToolbar(null);
+    window.getSelection()?.removeAllRanges();
+    void handleOpenAppend(text);
+  }, [selectionToolbar, handleOpenAppend]);
 
   const runningCount = history.filter((h) => h.status === "running").length;
 
@@ -236,7 +343,10 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
         <Box display="flex" alignItems="center" gap={1}>
           <IconButton
             size="small"
-            onClick={() => setDetailExecution(null)}
+            onClick={() => {
+              setDetailExecution(null);
+              setSelectionToolbar(null);
+            }}
             title="一覧に戻る"
           >
             <ArrowBackIcon fontSize="small" />
@@ -264,7 +374,9 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
             ` → ${new Date(detailExecution.completedAt).toLocaleString("ja-JP")}`}
         </Typography>
         <Box
+          ref={resultRef}
           sx={{
+            position: "relative",
             p: 2,
             borderRadius: "var(--radius-lg)",
             border: "1px solid",
@@ -274,14 +386,62 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
             overflow: "auto",
           }}
         >
-          <Typography
-            variant="body2"
-            color="text.primary"
-            sx={{ whiteSpace: "pre-wrap", lineHeight: 1.8, fontSize: "0.8rem" }}
-          >
-            {detailExecution.result}
-          </Typography>
+          {/* 選択ツールバー */}
+          {selectionToolbar && (
+            <div
+              ref={toolbarRef}
+              className="absolute z-50 flex items-center gap-0.5 px-1 py-0.5 rounded-[var(--radius-md)] bg-[var(--bg-elevated)] border border-[var(--border-default)] shadow-md"
+              style={{
+                left: Math.max(0, selectionToolbar.x - 60),
+                top: Math.max(0, selectionToolbar.y - 28),
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              <button
+                onClick={handleSelectionToMemo}
+                className="text-[10px] px-2 py-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent-primary)] transition-colors whitespace-nowrap"
+              >
+                メモにする
+              </button>
+              <div className="w-px h-3 bg-[var(--border-default)]" />
+              <button
+                onClick={handleSelectionAppend}
+                className="text-[10px] px-2 py-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent-primary)] transition-colors whitespace-nowrap"
+              >
+                メモに追記
+              </button>
+            </div>
+          )}
+          <div className="chat-markdown text-sm leading-relaxed">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{detailExecution.result}</ReactMarkdown>
+          </div>
         </Box>
+
+        {/* メモ追記先選択モーダル */}
+        <Modal
+          open={appendOpen}
+          onClose={() => setAppendOpen(false)}
+          title="追記先のメモを選択"
+        >
+          {memoLoading ? (
+            <p className="text-[var(--text-tertiary)] text-sm py-4 text-center">読み込み中...</p>
+          ) : memoList.length === 0 ? (
+            <p className="text-[var(--text-tertiary)] text-sm py-4 text-center">メモがありません</p>
+          ) : (
+            <div className="max-h-60 overflow-y-auto space-y-1">
+              {memoList.map((memo) => (
+                <button
+                  key={memo.filename}
+                  onClick={() => handleAppendToMemo(memo)}
+                  className="w-full text-left px-3 py-2 rounded-[var(--radius-md)] hover:bg-[var(--bg-hover)] transition-colors"
+                >
+                  <div className="text-sm text-[var(--text-primary)] truncate">{memo.title}</div>
+                  <div className="text-[10px] text-[var(--text-tertiary)]">{memo.created_at}</div>
+                </button>
+              ))}
+            </div>
+          )}
+        </Modal>
       </Box>
     );
   }
