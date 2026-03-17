@@ -435,6 +435,62 @@ select {
   pointer-events: none;
 }
 
+/* --- Vertical Editor - Hidden Textarea Proxy --- */
+
+.vertical-editor-container {
+  position: relative;
+}
+
+.vertical-editor-display {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-feature-settings: normal;
+  word-break: break-all;
+  white-space: pre-wrap;
+  cursor: text;
+  padding: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.vertical-editor-hidden-textarea {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  writing-mode: vertical-rl;
+  /* clip-path hides visually but IME still works */
+  clip-path: inset(50%);
+  font-size: inherit;
+}
+
+.vertical-editor-caret {
+  display: inline;
+  border-left: 2px solid var(--accent-primary);
+  animation: ve-caret-blink 1s step-end infinite;
+  margin-left: -1px;
+}
+
+@keyframes ve-caret-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.vertical-editor-composition {
+  text-decoration: underline;
+  text-decoration-color: var(--accent-primary);
+  text-underline-offset: 2px;
+}
+
+.vertical-editor-selected {
+  background: var(--accent-subtle);
+}
+
 /* --- App-specific layout --- */
 
 #root {

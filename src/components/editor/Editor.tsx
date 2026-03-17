@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, type CSSProperties } from 'react';
 import { useEditorStore } from '@/stores/editorStore';
 import { useCharacterCount } from '@/hooks/useCharacterCount';
 import { useAutoSave, type SaveStatus } from '@/hooks/useAutoSave';
+import { VerticalEditor } from './VerticalEditor';
 
 interface EditorProps {
   onSave?: (content: string) => Promise<void>;
@@ -19,10 +20,7 @@ export function Editor({ onSave }: EditorProps) {
   } = useEditorStore();
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const editableDivRef = useRef<HTMLDivElement>(null);
   const composingRef = useRef(false);
-  /** Track whether the latest content change came from user input (not external) */
-  const isUserInputRef = useRef(false);
   const charCount = useCharacterCount(content);
 
   const saveFn = useCallback(
@@ -86,92 +84,26 @@ export function Editor({ onSave }: EditorProps) {
     autoSave.setComposing(false);
   }, [autoSave]);
 
-  // --- Handlers for vertical mode (contentEditable div) ---
+  // --- Handler for vertical mode (VerticalEditor) ---
 
-  /** Extract plain text from contentEditable div */
-  const getEditableText = useCallback((): string => {
-    const el = editableDivRef.current;
-    if (!el) return '';
-    // innerText preserves line breaks from <br> / block elements
-    return el.innerText;
-  }, []);
-
-  const handleEditableInput = useCallback(() => {
-    if (composingRef.current) return;
-    isUserInputRef.current = true;
-    const text = getEditableText();
-    setContent(text);
-  }, [setContent, getEditableText]);
-
-  const handleEditableCompositionStart = useCallback(() => {
-    composingRef.current = true;
-    autoSave.setComposing(true);
-  }, [autoSave]);
-
-  const handleEditableCompositionEnd = useCallback(() => {
-    composingRef.current = false;
-    autoSave.setComposing(false);
-    // After composition ends, sync content
-    isUserInputRef.current = true;
-    const text = getEditableText();
-    setContent(text);
-  }, [autoSave, setContent, getEditableText]);
-
-  /** Paste: force plain text only */
-  const handleEditablePaste = useCallback(
-    (e: React.ClipboardEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const text = e.clipboardData.getData('text/plain');
-      document.execCommand('insertText', false, text);
+  const handleVerticalChange = useCallback(
+    (newContent: string) => {
+      setContent(newContent);
     },
-    [],
+    [setContent],
   );
 
-  /** Prevent rich content from being inserted (e.g. drag-and-drop) */
-  const handleEditableBeforeInput = useCallback(
-    (e: React.FormEvent<HTMLDivElement>) => {
-      const inputEvent = e as unknown as InputEvent;
-      // Block insertFromDrop of HTML, etc. We only allow plain text types.
-      if (
-        inputEvent.inputType === 'insertFromDrop' &&
-        inputEvent.dataTransfer
-      ) {
-        const hasHtml = inputEvent.dataTransfer.types.includes('text/html');
-        if (hasHtml) {
-          e.preventDefault();
-          const text = inputEvent.dataTransfer.getData('text/plain');
-          if (text) {
-            document.execCommand('insertText', false, text);
-          }
-        }
-      }
+  const handleVerticalComposition = useCallback(
+    (composing: boolean) => {
+      autoSave.setComposing(composing);
     },
-    [],
+    [autoSave],
   );
-
-  /**
-   * Sync external content changes (file switch, undo from outside, etc.)
-   * into the contentEditable div. Skip if the change came from user input
-   * to avoid clobbering the cursor position.
-   */
-  useEffect(() => {
-    if (isUserInputRef.current) {
-      // This content update was caused by our own input handler; don't touch the DOM.
-      isUserInputRef.current = false;
-      return;
-    }
-    const el = editableDivRef.current;
-    if (!el) return;
-    // Only update if actually different (avoid unnecessary DOM writes)
-    if (el.innerText !== content) {
-      el.innerText = content;
-    }
-  }, [content]);
 
   const isVertical = direction === 'vertical';
 
   // lineHeight は整数pxに丸めてカーソル位置ズレを防ぐ
-  const lineHeightPx = Math.round(fontSize * (isVertical ? 1.7 : 1.8));
+  const lineHeightPx = Math.round(fontSize * 1.8);
 
   const editorBaseStyle: CSSProperties = {
     fontFamily,
@@ -185,30 +117,9 @@ export function Editor({ onSave }: EditorProps) {
 
   const textareaStyle: CSSProperties = {
     ...editorBaseStyle,
-    ...(isVertical
-      ? {
-          writingMode: 'vertical-rl',
-          textOrientation: 'mixed' as const,
-          height: `${charsPerLine * fontSize}px`,
-          width: 'auto',
-          minWidth: '100%',
-        }
-      : {
-          writingMode: 'horizontal-tb',
-          width: `${charsPerLine * fontSize}px`,
-          maxWidth: '100%',
-        }),
-  };
-
-  const editableDivStyle: CSSProperties = {
-    ...editorBaseStyle,
-    writingMode: 'vertical-rl',
-    textOrientation: 'mixed' as const,
-    height: `${charsPerLine * fontSize}px`,
-    width: 'auto',
-    minWidth: '100%',
-    whiteSpace: 'pre-wrap',
-    overflowWrap: 'break-word',
+    writingMode: 'horizontal-tb',
+    width: `${charsPerLine * fontSize}px`,
+    maxWidth: '100%',
   };
 
   return (
@@ -229,22 +140,14 @@ export function Editor({ onSave }: EditorProps) {
           style={isVertical ? { minWidth: '100%', minHeight: '100%' } : undefined}
         >
           {isVertical ? (
-            <div
-              ref={editableDivRef}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={handleEditableInput}
-              onCompositionStart={handleEditableCompositionStart}
-              onCompositionEnd={handleEditableCompositionEnd}
-              onPaste={handleEditablePaste}
-              onBeforeInput={handleEditableBeforeInput}
-              spellCheck={false}
-              className={[
-                'editor-editable',
-                'bg-transparent text-[var(--text-primary)] resize-none',
-                'outline-none border-none',
-              ].join(' ')}
-              style={editableDivStyle}
+            <VerticalEditor
+              content={content}
+              onChange={handleVerticalChange}
+              onCompositionChange={handleVerticalComposition}
+              fontFamily={fontFamily}
+              fontSize={fontSize}
+              charsPerLine={charsPerLine}
+              placeholder="ここに本文を入力..."
             />
           ) : (
             <textarea
