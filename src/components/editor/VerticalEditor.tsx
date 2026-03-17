@@ -38,6 +38,7 @@ interface HistoryEntry {
 // ---------------------------------------------------------------------------
 
 const HISTORY_LIMIT = 100;
+const COMPOSITION_END_GRACE_MS = 50;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -57,6 +58,7 @@ export function VerticalEditor({
   const displayRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const composingRef = useRef(false);
+  const compositionEndTimeRef = useRef(0);
   const compositionTextRef = useRef('');
   /** Guard to prevent external content sync from fighting user edits */
   const isInternalChangeRef = useRef(false);
@@ -273,8 +275,9 @@ export function VerticalEditor({
 
       // --- Enter ---
       if (e.key === 'Enter') {
-        // IME変換中のEnter（確定）は無視する
+        // IME変換中、または変換確定直後のEnterは無視する
         if (composingRef.current) return;
+        if (Date.now() - compositionEndTimeRef.current < COMPOSITION_END_GRACE_MS) return;
         e.preventDefault();
         if (selection) {
           const selStart = Math.min(selection.start, selection.end);
@@ -430,6 +433,7 @@ export function VerticalEditor({
   const handleCompositionEnd = useCallback(
     (e: React.CompositionEvent<HTMLTextAreaElement>) => {
       composingRef.current = false;
+      compositionEndTimeRef.current = Date.now();
       const finalText = e.data;
       compositionTextRef.current = '';
       setCompositionText('');

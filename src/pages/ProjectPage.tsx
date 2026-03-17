@@ -123,7 +123,14 @@ export default function ProjectPage() {
                 AI相談を開始
               </Button>
             </Box>
-            <RecentChats materials={materials} />
+            <RecentChats
+            materials={materials}
+            onChatClick={(filename) => {
+              navigate(`/project/${projectId}/editor`, {
+                state: { chatSessionFilename: filename },
+              });
+            }}
+          />
           </Paper>
         </Box>
 

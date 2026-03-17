@@ -9,9 +9,10 @@ import type { MaterialFile } from "../../types";
 interface RecentChatsProps {
   materials: MaterialFile[];
   onOpen?: (material: MaterialFile) => void;
+  onChatClick?: (filename: string) => void;
 }
 
-export function RecentChats({ materials, onOpen }: RecentChatsProps) {
+export function RecentChats({ materials, onOpen, onChatClick }: RecentChatsProps) {
   const chatMaterials = materials
     .filter((m) => m.kind === "chat")
     .slice(0, 5);
@@ -36,7 +37,10 @@ export function RecentChats({ materials, onOpen }: RecentChatsProps) {
         return (
           <ListItemButton
             key={material.filename}
-            onClick={() => onOpen?.(material)}
+            onClick={() => {
+              onChatClick?.(material.filename);
+              onOpen?.(material);
+            }}
             sx={{
               borderRadius: 'var(--radius-lg)',
               py: 1,

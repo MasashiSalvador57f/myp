@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -20,8 +20,14 @@ import { Button } from '@/components/ui';
 import type { ManuscriptFile } from '@/types';
 import * as commands from '@/lib/tauri-commands';
 
+interface EditorLocationState {
+  chatSessionFilename?: string;
+}
+
 export default function EditorPage() {
   const { projectId, fileId } = useParams();
+  const location = useLocation();
+  const locationState = (location.state ?? {}) as EditorLocationState;
   const {
     setProjectId,
     setFiles,
@@ -36,7 +42,7 @@ export default function EditorPage() {
     rightSidebarOpen,
   } = useEditorStore();
 
-  const { sessions, switchSession } = useChatStore();
+  const { sessions, switchSession, loadSessionsFromDisk } = useChatStore();
 
   const [focusMode, setFocusMode] = useState(false);
 
@@ -52,6 +58,33 @@ export default function EditorPage() {
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [focusMode]);
+
+  // ProjectPageの「最近のAI相談」クリックでエディタに遷移した場合、対象セッションを開く
+  useEffect(() => {
+    const filename = locationState.chatSessionFilename;
+    if (!filename || !projectId) return;
+
+    // セッションIDはファイル名から拡張子を除いたもの（例: "session-xxx.json" -> "session-xxx"）
+    const sessionId = filename.replace(/\.json$/, '');
+
+    const openSession = async () => {
+      // まだセッション一覧が読み込まれていなければ読み込む
+      let targetSession = sessions.find((s) => s.id === sessionId);
+      if (!targetSession) {
+        await loadSessionsFromDisk(projectId);
+        // storeが更新されるのを待つため、最新のsessionsはuseEffectが再実行されて参照する
+        return;
+      }
+      switchSession(targetSession);
+      if (!rightSidebarOpen) {
+        toggleRightSidebar();
+      }
+    };
+
+    void openSession();
+  // sessions が変化したときに再試行できるよう依存に含める
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationState.chatSessionFilename, projectId, sessions]);
 
   // メモのチャットリンクからセッションを開く
   const handleOpenChatSession = useCallback((sessionId: string) => {
