@@ -9,7 +9,11 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { MemoInfo, MemoDetail } from '@/types/memo';
 import * as commands from '@/lib/tauri-commands';
 import { emit, on } from '@/lib/events';
@@ -28,6 +32,8 @@ export function MemoPanel({ projectId, onOpenChatSession }: MemoPanelProps) {
   const [editTitle, setEditTitle] = useState('');
   const [editBody, setEditBody] = useState('');
   const [dirty, setDirty] = useState(false);
+
+  const [editing, setEditing] = useState(false);
 
   // 新規メモ
   const [adding, setAdding] = useState(false);
@@ -60,10 +66,12 @@ export function MemoPanel({ projectId, onOpenChatSession }: MemoPanelProps) {
     if (expandedFile === filename) {
       setExpandedFile(null);
       setDetail(null);
+      setEditing(false);
       return;
     }
     setExpandedFile(filename);
     setDirty(false);
+    setEditing(false);
     try {
       const d = await commands.readMemo(filename);
       setDetail(d);
@@ -273,44 +281,68 @@ export function MemoPanel({ projectId, onOpenChatSession }: MemoPanelProps) {
                     </IconButton>
                   </Box>
 
-                  {/* 展開時: インライン編集 */}
+                  {/* 展開時: 閲覧/編集 */}
                   {isExpanded && detail && (
                     <Box sx={{ px: 2, pb: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <TextField
-                        fullWidth
-                        variant="standard"
-                        value={editTitle}
-                        onChange={(e) => { setEditTitle(e.target.value); setDirty(true); }}
-                        onBlur={handleBlur}
-                        placeholder="タイトル"
-                        slotProps={{
-                          input: {
-                            disableUnderline: true,
-                            sx: { fontWeight: 500, fontSize: '0.8125rem' },
-                          },
-                        }}
-                      />
-                      <TextField
-                        fullWidth
-                        variant="standard"
-                        value={editBody}
-                        onChange={(e) => { setEditBody(e.target.value); setDirty(true); }}
-                        onBlur={handleBlur}
-                        placeholder="メモの内容..."
-                        multiline
-                        minRows={2}
-                        slotProps={{
-                          input: {
-                            disableUnderline: true,
-                            sx: { fontSize: '0.75rem', lineHeight: 1.6 },
-                          },
-                        }}
-                      />
-                      {dirty && (
-                        <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.6rem' }}>
-                          未保存 — フォーカスを外すと自動保存
-                        </Typography>
+                      {/* 閲覧/編集切替 */}
+                      <Box display="flex" justifyContent="flex-end">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            if (editing && dirty) saveEdit();
+                            setEditing((v) => !v);
+                          }}
+                          title={editing ? '閲覧モード' : '編集モード'}
+                          sx={{ color: editing ? 'primary.main' : 'text.disabled' }}
+                        >
+                          {editing ? <VisibilityIcon sx={{ fontSize: 14 }} /> : <EditIcon sx={{ fontSize: 14 }} />}
+                        </IconButton>
+                      </Box>
+
+                      {editing ? (
+                        <>
+                          <TextField
+                            fullWidth
+                            variant="standard"
+                            value={editTitle}
+                            onChange={(e) => { setEditTitle(e.target.value); setDirty(true); }}
+                            onBlur={handleBlur}
+                            placeholder="タイトル"
+                            slotProps={{
+                              input: {
+                                disableUnderline: true,
+                                sx: { fontWeight: 500, fontSize: '0.8125rem' },
+                              },
+                            }}
+                          />
+                          <TextField
+                            fullWidth
+                            variant="standard"
+                            value={editBody}
+                            onChange={(e) => { setEditBody(e.target.value); setDirty(true); }}
+                            onBlur={handleBlur}
+                            placeholder="メモの内容..."
+                            multiline
+                            minRows={2}
+                            slotProps={{
+                              input: {
+                                disableUnderline: true,
+                                sx: { fontSize: '0.75rem', lineHeight: 1.6 },
+                              },
+                            }}
+                          />
+                          {dirty && (
+                            <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.6rem' }}>
+                              未保存 — フォーカスを外すと自動保存
+                            </Typography>
+                          )}
+                        </>
+                      ) : (
+                        <Box className="chat-markdown" sx={{ fontSize: '0.75rem', lineHeight: 1.8 }}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>{detail.body || '(内容なし)'}</ReactMarkdown>
+                        </Box>
                       )}
+
                       {/* チャットセッションリンク */}
                       {onOpenChatSession && detail.body && (() => {
                         const match = detail.body.match(/📎 チャットセッション: (session-[\w-]+)/);

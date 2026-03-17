@@ -11,7 +11,11 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditIcon from "@mui/icons-material/Edit";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import MuiButton from "@mui/material/Button";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { MemoInfo, MemoDetail } from "../../types/memo";
 import { useProjectStore } from "../../stores/projectStore";
 import * as commands from "../../lib/tauri-commands";
@@ -32,6 +36,7 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
   const [editProjectId, setEditProjectId] = useState<string>("");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [modalEditing, setModalEditing] = useState(false);
   const [previews, setPreviews] = useState<Record<string, string>>({});
   const { projects } = useProjectStore();
 
@@ -73,6 +78,7 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
   const handleOpen = async (filename: string) => {
     setOpenFile(filename);
     setDirty(false);
+    setModalEditing(false);
     try {
       const d = await commands.readMemo(filename);
       setDetail(d);
@@ -201,54 +207,92 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
         <DialogContent sx={{ p: 2.5 }}>
           {detail ? (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              <TextField
-                fullWidth
-                variant="standard"
-                value={editTitle}
-                onChange={(e) => { setEditTitle(e.target.value); setDirty(true); }}
-                onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); saveAndClose(); } }}
-                placeholder="タイトル"
-                autoFocus
-                slotProps={{
-                  input: {
-                    disableUnderline: true,
-                    sx: { fontWeight: 600, fontSize: '1rem' },
-                  },
-                }}
-              />
-              <TextField
-                fullWidth
-                variant="standard"
-                value={editBody}
-                onChange={(e) => { setEditBody(e.target.value); setDirty(true); }}
-                onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); saveAndClose(); } }}
-                placeholder="メモを入力..."
-                multiline
-                minRows={4}
-                slotProps={{
-                  input: {
-                    disableUnderline: true,
-                    sx: { fontSize: '0.875rem', lineHeight: 1.6 },
-                  },
-                }}
-              />
-              <FormControl size="small" sx={{ minWidth: 160 }}>
-                <Select
-                  value={editProjectId}
-                  onChange={(e) => { setEditProjectId(e.target.value); setDirty(true); }}
-                  displayEmpty
-                  sx={{ fontSize: '0.75rem', height: 28 }}
+              {/* 閲覧/編集切替ヘッダー */}
+              <Box display="flex" alignItems="center" justifyContent="space-between">
+                {modalEditing ? (
+                  <TextField
+                    fullWidth
+                    variant="standard"
+                    value={editTitle}
+                    onChange={(e) => { setEditTitle(e.target.value); setDirty(true); }}
+                    onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); saveAndClose(); } }}
+                    placeholder="タイトル"
+                    autoFocus
+                    slotProps={{
+                      input: {
+                        disableUnderline: true,
+                        sx: { fontWeight: 600, fontSize: '1rem' },
+                      },
+                    }}
+                  />
+                ) : (
+                  <Typography variant="h6" fontWeight={600} sx={{ flex: 1 }}>
+                    {editTitle || '(無題)'}
+                  </Typography>
+                )}
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    if (modalEditing && dirty) {
+                      // 編集→閲覧に切り替える前に保存
+                      setSaving(true);
+                      commands.updateMemo(openFile!, editTitle.trim() || "(無題)", editBody, editProjectId || null)
+                        .then(() => { setDirty(false); emit("memo:changed"); onUpdated(); })
+                        .catch((e) => console.error("メモの更新に失敗:", e))
+                        .finally(() => setSaving(false));
+                    }
+                    setModalEditing((v) => !v);
+                  }}
+                  title={modalEditing ? '閲覧モード' : '編集モード'}
+                  sx={{ color: modalEditing ? 'primary.main' : 'text.disabled', ml: 1 }}
                 >
-                  <MenuItem value="">
-                    <Typography variant="caption" color="text.secondary">プロジェクトなし</Typography>
-                  </MenuItem>
-                  {projects.map((p) => (
-                    <MenuItem key={p.id} value={p.id}>
-                      <Typography variant="caption">{p.name}</Typography>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  {modalEditing ? <VisibilityIcon sx={{ fontSize: 18 }} /> : <EditIcon sx={{ fontSize: 18 }} />}
+                </IconButton>
+              </Box>
+
+              {/* 本文 */}
+              {modalEditing ? (
+                <>
+                  <TextField
+                    fullWidth
+                    variant="standard"
+                    value={editBody}
+                    onChange={(e) => { setEditBody(e.target.value); setDirty(true); }}
+                    onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); saveAndClose(); } }}
+                    placeholder="メモを入力..."
+                    multiline
+                    minRows={4}
+                    slotProps={{
+                      input: {
+                        disableUnderline: true,
+                        sx: { fontSize: '0.875rem', lineHeight: 1.6 },
+                      },
+                    }}
+                  />
+                  <FormControl size="small" sx={{ minWidth: 160 }}>
+                    <Select
+                      value={editProjectId}
+                      onChange={(e) => { setEditProjectId(e.target.value); setDirty(true); }}
+                      displayEmpty
+                      sx={{ fontSize: '0.75rem', height: 28 }}
+                    >
+                      <MenuItem value="">
+                        <Typography variant="caption" color="text.secondary">プロジェクトなし</Typography>
+                      </MenuItem>
+                      {projects.map((p) => (
+                        <MenuItem key={p.id} value={p.id}>
+                          <Typography variant="caption">{p.name}</Typography>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </>
+              ) : (
+                <Box className="chat-markdown" sx={{ fontSize: '0.875rem', lineHeight: 1.8, minHeight: 80 }}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{editBody || '(内容なし)'}</ReactMarkdown>
+                </Box>
+              )}
+
               <Box display="flex" alignItems="center" justifyContent="space-between" pt={1} sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
                 <Box display="flex" alignItems="center" gap={1.5}>
                   <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.625rem' }}>
