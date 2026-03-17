@@ -14,8 +14,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
   ai: {
     api_key: null,
-    model: "claude-sonnet-4-6",
-    provider: "anthropic",
+    gemini_api_key: null,
+    model: "gpt-5",
+    provider: "openai",
   },
   storage: {
     data_dir: null,

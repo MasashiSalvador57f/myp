@@ -22,6 +22,8 @@ fn default_color_preset() -> String {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiSettings {
     pub api_key: Option<String>,
+    #[serde(default)]
+    pub gemini_api_key: Option<String>,
     pub model: String,
     pub provider: String,
 }
@@ -61,8 +63,9 @@ impl Default for AiSettings {
     fn default() -> Self {
         Self {
             api_key: None,
-            model: "claude-sonnet-4-6".into(),
-            provider: "anthropic".into(),
+            gemini_api_key: None,
+            model: "gpt-5".into(),
+            provider: "openai".into(),
         }
     }
 }

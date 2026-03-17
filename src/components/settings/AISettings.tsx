@@ -1,9 +1,6 @@
 import { useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import List from "@mui/material/List";
-import ListItemButton from "@mui/material/ListItemButton";
-import ListItemText from "@mui/material/ListItemText";
 import IconButton from "@mui/material/IconButton";
 import CheckIcon from "@mui/icons-material/Check";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -11,83 +8,101 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { Input, Button } from "../ui";
 import { useSettingsStore } from "../../stores/settingsStore";
 
-const AI_MODELS = [
-  { label: "Claude Opus 4.6（高性能）", value: "claude-opus-4-6" },
-  { label: "Claude Sonnet 4.6（バランス）", value: "claude-sonnet-4-6" },
-  { label: "Claude Haiku 4.5（高速）", value: "claude-haiku-4-5-20251001" },
+const PROVIDERS = [
+  { value: "openai", label: "OpenAI", model: "gpt-5", placeholder: "sk-...", hint: "platform.openai.com から取得" },
+  { value: "gemini", label: "Gemini", model: "gemini-3-flash", placeholder: "AIza...", hint: "aistudio.google.com から取得" },
 ];
 
 export function AISettings() {
   const { settings, updateAiSettings } = useSettingsStore();
-  const { api_key, model } = settings.ai;
-  const [showKey, setShowKey] = useState(false);
+  const { api_key, gemini_api_key, provider } = settings.ai;
+  const [showOpenAIKey, setShowOpenAIKey] = useState(false);
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const handleSave = async () => {
-    await updateAiSettings({ api_key, model });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* プロバイダー選択 */}
+      <Box>
+        <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: "block", mb: 1.5, letterSpacing: "0.04em" }}>
+          使用するプロバイダー
+        </Typography>
+        <Box display="flex" gap={1}>
+          {PROVIDERS.map((p) => (
+            <Box
+              key={p.value}
+              component="button"
+              onClick={() => updateAiSettings({ provider: p.value })}
+              sx={{
+                flex: 1,
+                py: 1.5,
+                px: 2,
+                borderRadius: "var(--radius-lg)",
+                border: "1px solid",
+                borderColor: provider === p.value ? "primary.main" : "divider",
+                bgcolor: provider === p.value ? "var(--accent-subtle)" : "transparent",
+                cursor: "pointer",
+                transition: "all 200ms",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                "&:hover": {
+                  bgcolor: provider === p.value ? "var(--accent-subtle)" : "action.hover",
+                },
+              }}
+            >
+              {provider === p.value && <CheckIcon sx={{ fontSize: 14, color: "primary.main" }} />}
+              <Box>
+                <Typography variant="body2" fontWeight={provider === p.value ? 600 : 400} color={provider === p.value ? "text.primary" : "text.secondary"}>
+                  {p.label}
+                </Typography>
+                <Typography variant="caption" color="text.disabled" sx={{ fontSize: "0.65rem" }}>
+                  {p.model}
+                </Typography>
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      {/* OpenAI APIキー */}
       <Box>
         <Input
-          label="APIキー"
-          type={showKey ? "text" : "password"}
+          label="OpenAI APIキー"
+          type={showOpenAIKey ? "text" : "password"}
           value={api_key ?? ""}
           onChange={(e) => updateAiSettings({ api_key: e.target.value || null })}
-          placeholder="sk-ant-..."
-          hint="Anthropic Console から取得できます"
+          placeholder="sk-..."
+          hint="platform.openai.com から取得"
           iconRight={
-            <IconButton
-              onClick={() => setShowKey((v) => !v)}
-              edge="end"
-              size="small"
-              aria-label={showKey ? "パスワードを隠す" : "パスワードを表示"}
-            >
-              {showKey ? <VisibilityOffIcon sx={{ fontSize: 16 }} /> : <VisibilityIcon sx={{ fontSize: 16 }} />}
+            <IconButton onClick={() => setShowOpenAIKey((v) => !v)} edge="end" size="small">
+              {showOpenAIKey ? <VisibilityOffIcon sx={{ fontSize: 16 }} /> : <VisibilityIcon sx={{ fontSize: 16 }} />}
             </IconButton>
           }
         />
       </Box>
 
+      {/* Gemini APIキー */}
       <Box>
-        <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: '0.04em' }}>
-          モデル
-        </Typography>
-        <List disablePadding>
-          {AI_MODELS.map((m) => (
-            <ListItemButton
-              key={m.value}
-              selected={model === m.value}
-              onClick={() => updateAiSettings({ model: m.value })}
-              sx={{
-                borderRadius: 'var(--radius-lg)',
-                mb: 0.5,
-                py: 1.25,
-                px: 1.5,
-                border: '1px solid',
-                borderColor: model === m.value ? 'primary.main' : 'transparent',
-                bgcolor: model === m.value ? 'var(--accent-subtle)' : 'transparent',
-                '&.Mui-selected': {
-                  bgcolor: 'var(--accent-subtle)',
-                },
-                '&.Mui-selected:hover': {
-                  bgcolor: 'var(--accent-subtle)',
-                },
-              }}
-            >
-              <ListItemText
-                primary={m.label}
-                primaryTypographyProps={{ fontSize: '0.875rem' }}
-              />
-              {model === m.value && (
-                <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-              )}
-            </ListItemButton>
-          ))}
-        </List>
+        <Input
+          label="Gemini APIキー"
+          type={showGeminiKey ? "text" : "password"}
+          value={gemini_api_key ?? ""}
+          onChange={(e) => updateAiSettings({ gemini_api_key: e.target.value || null })}
+          placeholder="AIza..."
+          hint="aistudio.google.com から取得"
+          iconRight={
+            <IconButton onClick={() => setShowGeminiKey((v) => !v)} edge="end" size="small">
+              {showGeminiKey ? <VisibilityOffIcon sx={{ fontSize: 16 }} /> : <VisibilityIcon sx={{ fontSize: 16 }} />}
+            </IconButton>
+          }
+        />
       </Box>
 
       <Box display="flex" alignItems="center" gap={1.5}>

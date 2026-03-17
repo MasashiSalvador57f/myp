@@ -12,6 +12,7 @@ import { EditorToolbar } from '@/components/editor/EditorToolbar';
 import { EditorLayout } from '@/components/editor/EditorLayout';
 import { FileList } from '@/components/editor/FileList';
 import { LeftSidebarTabs } from '@/components/editor/LeftSidebarTabs';
+import { ChatPanel } from '@/components/chat/ChatPanel';
 import { Button } from '@/components/ui';
 import type { ManuscriptFile } from '@/types';
 import * as commands from '@/lib/tauri-commands';
@@ -201,7 +202,7 @@ export default function EditorPage() {
         )
       }
       editor={<Editor onSave={handleSave} />}
-      rightPanel={<div />}
+      rightPanel={projectId ? <ChatPanel projectId={projectId} manuscriptContext={content} /> : undefined}
     />
   );
 }

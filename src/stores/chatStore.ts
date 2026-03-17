@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { ChatSession, ChatMessage, PresetAgent } from "../types";
 import * as commands from "../lib/tauri-commands";
+import { streamChatMessage, type AIMessage, type AIServiceConfig } from "../lib/ai-service";
 
 /** プリセットエージェント定義 */
 export const PRESET_AGENTS: PresetAgent[] = [
@@ -119,31 +120,95 @@ export const useChatStore = create<ChatState>((set, get) => ({
       error: null,
     });
 
+    // AI設定を取得
+    let settings;
     try {
-      // Backend resolves system prompt from agent id
-      const reply = await commands.sendChatMessage(
-        projectId,
-        session.agent,
-        updatedMessages,
-        context
-      );
-      const assistantMessage: ChatMessage = {
-        role: "assistant",
-        content: reply,
-        timestamp: new Date().toISOString(),
-      };
-      set((s) => ({
-        currentSession: s.currentSession
-          ? {
-              ...s.currentSession,
-              messages: [...s.currentSession.messages, assistantMessage],
-            }
-          : null,
-        loading: false,
-      }));
-    } catch (e) {
-      set({ error: String(e), loading: false });
+      settings = await commands.getSettings();
+    } catch {
+      settings = null;
     }
+
+    const provider = (settings?.ai?.provider ?? "openai") as "openai" | "gemini";
+    const apiKey = provider === "gemini"
+      ? settings?.ai?.gemini_api_key
+      : settings?.ai?.api_key;
+
+    if (!apiKey) {
+      const providerName = provider === "gemini" ? "Gemini" : "OpenAI";
+      set({ error: `${providerName}のAPIキーが設定されていません。設定画面から入力してください。`, loading: false });
+      return;
+    }
+
+    // システムプロンプトを構築
+    const agentDef = PRESET_AGENTS.find((a) => a.id === session!.agent) ?? PRESET_AGENTS[0];
+    let systemPrompt = agentDef.system_prompt;
+    if (context) {
+      systemPrompt += `\n\n---\n以下は参照中の原稿テキストです:\n${context}`;
+    }
+
+    // Vercel AI SDK でストリーミング送信
+    const aiMessages: AIMessage[] = updatedMessages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+
+    const aiConfig: AIServiceConfig = { provider, apiKey };
+
+    // ストリーミング中のアシスタントメッセージをプレースホルダーとして追加
+    const placeholderMessage: ChatMessage = {
+      role: "assistant",
+      content: "",
+      timestamp: new Date().toISOString(),
+    };
+    set((s) => ({
+      currentSession: s.currentSession
+        ? { ...s.currentSession, messages: [...s.currentSession.messages, placeholderMessage] }
+        : null,
+    }));
+
+    await streamChatMessage(
+      aiConfig,
+      systemPrompt,
+      aiMessages,
+      // onChunk: ストリーミング中のテキストをリアルタイム更新
+      (partialText) => {
+        set((s) => {
+          if (!s.currentSession) return s;
+          const msgs = [...s.currentSession.messages];
+          const lastIdx = msgs.length - 1;
+          if (lastIdx >= 0 && msgs[lastIdx].role === "assistant") {
+            msgs[lastIdx] = { ...msgs[lastIdx], content: partialText };
+          }
+          return { currentSession: { ...s.currentSession, messages: msgs } };
+        });
+      },
+      // onComplete
+      (fullText) => {
+        set((s) => {
+          if (!s.currentSession) return s;
+          const msgs = [...s.currentSession.messages];
+          const lastIdx = msgs.length - 1;
+          if (lastIdx >= 0 && msgs[lastIdx].role === "assistant") {
+            msgs[lastIdx] = { ...msgs[lastIdx], content: fullText, timestamp: new Date().toISOString() };
+          }
+          return { currentSession: { ...s.currentSession, messages: msgs }, loading: false };
+        });
+      },
+      // onError
+      (error) => {
+        // エラー時はプレースホルダーを削除
+        set((s) => {
+          if (!s.currentSession) return { error: error.message, loading: false };
+          const msgs = s.currentSession.messages.filter(
+            (_, i) => i !== s.currentSession!.messages.length - 1
+          );
+          return {
+            currentSession: { ...s.currentSession, messages: msgs },
+            error: error.message,
+            loading: false,
+          };
+        });
+      },
+    );
   },
 
   selectAgent: (agentId: string) => set({ selectedAgentId: agentId }),

@@ -24,11 +24,13 @@ export interface EditorSettings {
 
 /** AI設定 (Rust AiSettings に対応) */
 export interface AiSettings {
-  /** APIキー (null=未設定) */
+  /** OpenAI APIキー (null=未設定) */
   api_key: string | null;
+  /** Gemini APIキー (null=未設定) */
+  gemini_api_key: string | null;
   /** 使用モデル */
   model: string;
-  /** プロバイダー */
+  /** プロバイダー "openai" | "gemini" */
   provider: string;
 }
 

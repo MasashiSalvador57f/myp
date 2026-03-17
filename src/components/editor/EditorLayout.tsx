@@ -1,6 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import { useEditorStore } from '@/stores/editorStore';
 
 interface EditorLayoutProps {
@@ -85,24 +84,8 @@ export function EditorLayout({
             }}
             aria-hidden={!rightSidebarOpen}
           >
-            <Box sx={{ width: 320, height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <Box sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                height: 48,
-                px: 2,
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                flexShrink: 0,
-              }}>
-                <Typography variant="body1" fontWeight={500} color="text.primary">
-                  AI相談
-                </Typography>
-              </Box>
-              <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-                {rightPanel}
-              </Box>
+            <Box sx={{ width: 320, height: '100%' }}>
+              {rightPanel}
             </Box>
           </Box>
         )}

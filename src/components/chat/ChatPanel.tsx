@@ -1,12 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Button, Modal, Input } from "../ui";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import { AgentSelector } from "./AgentSelector";
 import { ChatHistory } from "./ChatHistory";
-import { useChatStore, PRESET_AGENTS } from "../../stores/chatStore";
-import { useSettingsStore } from "../../stores/settingsStore";
-import type { ChatSession } from "../../types";
+import { useChatStore } from "../../stores/chatStore";
+import type { ChatSession, MemoInfo } from "../../types";
+import * as commands from "../../lib/tauri-commands";
 
 interface ChatPanelProps {
   projectId: string;
@@ -19,25 +18,74 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
     sessions,
     selectedAgentId,
     loading,
+    error,
+    clearError,
     sendMessage,
     startNewSession,
     saveCurrentSession,
   } = useChatStore();
 
-  const { customPrompts } = useSettingsStore();
   const [showHistory, setShowHistory] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [saveTitle, setSaveTitle] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // メモ追記用
+  const [appendOpen, setAppendOpen] = useState(false);
+  const [appendContent, setAppendContent] = useState("");
+  const [memoList, setMemoList] = useState<MemoInfo[]>([]);
+  const [memoLoading, setMemoLoading] = useState(false);
+
+  // テキスト選択ツールバー
+  const [selectionToolbar, setSelectionToolbar] = useState<{ x: number; y: number; text: string } | null>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // メッセージ末尾へスクロール
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [currentSession?.messages]);
 
-  // セッション開始
+  // テキスト選択を検知
+  useEffect(() => {
+    const handleMouseUp = (e: MouseEvent) => {
+      // ツールバー内のクリックは無視（ボタン押下を妨げない）
+      if (toolbarRef.current && toolbarRef.current.contains(e.target as Node)) return;
+
+      // 少し遅延して選択状態を取得（ブラウザの選択確定を待つ）
+      setTimeout(() => {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !sel.toString().trim()) {
+          setSelectionToolbar(null);
+          return;
+        }
+        // メッセージリスト内の選択のみ対象
+        const container = messageListRef.current;
+        if (!container) return;
+        const anchorNode = sel.anchorNode;
+        if (!anchorNode || !container.contains(anchorNode)) {
+          setSelectionToolbar(null);
+          return;
+        }
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        // スクロール位置を考慮
+        setSelectionToolbar({
+          x: rect.left - containerRect.left + rect.width / 2,
+          y: rect.top - containerRect.top + container.scrollTop - 4,
+          text: sel.toString(),
+        });
+      }, 10);
+    };
+
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, []);
+
   const handleNew = () => {
     startNewSession(projectId, selectedAgentId);
     setShowHistory(false);
@@ -47,8 +95,6 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
     if (!currentSession) {
       startNewSession(projectId, selectedAgentId);
     }
-    // Backend resolves system prompt from agent ID;
-    // pass manuscript context for reference if available
     await sendMessage(projectId, content, manuscriptContext);
   };
 
@@ -60,13 +106,67 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
   };
 
   const handleSelectHistory = (session: ChatSession) => {
-    // 履歴セッションを currentSession に読み込む（読み取り専用として表示）
     useChatStore.setState({ currentSession: session });
     setShowHistory(false);
   };
 
-  const currentAgent =
-    PRESET_AGENTS.find((a) => a.id === selectedAgentId) ?? PRESET_AGENTS[0];
+  // 新規メモとして保存
+  const handleSaveAsMemo = useCallback(async (content: string) => {
+    try {
+      const title = content.split("\n")[0].slice(0, 50) || "AI相談メモ";
+      await commands.createMemo(title, content, projectId);
+    } catch (e) {
+      console.error("メモの作成に失敗:", e);
+    }
+  }, [projectId]);
+
+  // 既存メモに追記 — メモ選択モーダルを開く
+  const handleOpenAppend = useCallback(async (content: string) => {
+    setAppendContent(content);
+    setMemoLoading(true);
+    setAppendOpen(true);
+    try {
+      const all = await commands.listMemos();
+      setMemoList(all.filter((m) => m.project_id === projectId || !m.project_id));
+    } catch {
+      setMemoList([]);
+    } finally {
+      setMemoLoading(false);
+    }
+  }, [projectId]);
+
+  // 選択テキストをメモにする
+  const handleSelectionToMemo = useCallback(async () => {
+    if (!selectionToolbar) return;
+    const text = selectionToolbar.text;
+    setSelectionToolbar(null);
+    window.getSelection()?.removeAllRanges();
+    await handleSaveAsMemo(text);
+  }, [selectionToolbar, handleSaveAsMemo]);
+
+  // 選択テキストをメモに追記
+  const handleSelectionAppend = useCallback(async () => {
+    if (!selectionToolbar) return;
+    const text = selectionToolbar.text;
+    setSelectionToolbar(null);
+    window.getSelection()?.removeAllRanges();
+    await handleOpenAppend(text);
+  }, [selectionToolbar, handleOpenAppend]);
+
+  // 選択したメモに追記
+  const handleAppendToMemo = useCallback(async (memo: MemoInfo) => {
+    try {
+      const detail = await commands.readMemo(memo.filename);
+      const newBody = detail.body
+        ? `${detail.body}\n\n---\n\n${appendContent}`
+        : appendContent;
+      await commands.updateMemo(memo.filename, detail.title, newBody, detail.project_id);
+      setAppendOpen(false);
+      setAppendContent("");
+    } catch (e) {
+      console.error("メモへの追記に失敗:", e);
+    }
+  }, [appendContent]);
 
   return (
     <div className="flex flex-col h-full bg-[var(--bg-secondary)]">
@@ -146,45 +246,84 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
         />
       ) : (
         <>
-          {/* エージェント選択 */}
-          <AgentSelector customPrompts={customPrompts} />
-
           {/* メッセージリスト */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-4">
+          <div ref={messageListRef} className="flex-1 overflow-y-auto p-3 space-y-4 relative">
             {!currentSession || currentSession.messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                <div className="text-[var(--text-tertiary)] text-sm mb-2">
-                  {currentAgent.name}
-                </div>
                 <p className="text-[var(--text-tertiary)] text-xs">
-                  {currentAgent.description}
-                </p>
-                <p className="text-[var(--text-tertiary)] text-xs mt-4 opacity-60">
                   メッセージを入力して相談を開始してください
                 </p>
               </div>
             ) : (
               currentSession.messages
                 .filter((m) => m.role !== "system")
-                .map((msg, i) => <ChatMessage key={i} message={msg} />)
+                .map((msg, i) => (
+                  <ChatMessage
+                    key={i}
+                    message={msg}
+                    onSaveAsMemo={handleSaveAsMemo}
+                    onAppendToMemo={handleOpenAppend}
+                  />
+                ))
             )}
 
             {loading && (
-              <div className="flex items-center gap-2 text-[var(--text-tertiary)] text-sm">
+              <div className="flex items-center gap-2 text-[var(--text-tertiary)] text-sm py-2 px-3 rounded-lg bg-[var(--bg-tertiary)]">
                 <div className="flex gap-1">
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-[var(--text-tertiary)] animate-bounce"
+                      className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)] animate-bounce"
                       style={{ animationDelay: `${i * 0.15}s` }}
                     />
                   ))}
                 </div>
-                <span className="text-xs">回答を生成中...</span>
+                <span className="text-xs text-[var(--text-secondary)]">
+                  {currentSession?.messages.some((m) => m.role === "assistant" && m.content)
+                    ? "回答をストリーミング中..."
+                    : "回答を生成中..."}
+                </span>
+              </div>
+            )}
+
+            {error && (
+              <div
+                className="flex items-center justify-between gap-2 py-2 px-3 rounded-lg bg-[var(--error-bg)] text-[var(--error)] text-xs cursor-pointer"
+                onClick={clearError}
+              >
+                <span>{error}</span>
+                <span className="text-[var(--text-tertiary)] text-[10px]">クリックで閉じる</span>
               </div>
             )}
 
             <div ref={messagesEndRef} />
+
+            {/* 選択テキスト用フローティングツールバー */}
+            {selectionToolbar && (
+              <div
+                ref={toolbarRef}
+                className="absolute z-50 flex items-center gap-0.5 px-1 py-0.5 rounded-[var(--radius-md)] bg-[var(--bg-elevated)] border border-[var(--border-default)] shadow-md"
+                style={{
+                  left: Math.max(0, selectionToolbar.x - 60),
+                  top: Math.max(0, selectionToolbar.y - 28),
+                }}
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                <button
+                  onClick={handleSelectionToMemo}
+                  className="text-[10px] px-2 py-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent-primary)] transition-colors whitespace-nowrap"
+                >
+                  メモにする
+                </button>
+                <div className="w-px h-3 bg-[var(--border-default)]" />
+                <button
+                  onClick={handleSelectionAppend}
+                  className="text-[10px] px-2 py-1 rounded text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--accent-primary)] transition-colors whitespace-nowrap"
+                >
+                  メモに追記
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 入力エリア */}
@@ -220,6 +359,32 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
           placeholder="例: プロット相談 2026-03-17"
           autoFocus
         />
+      </Modal>
+
+      {/* メモ追記先選択モーダル */}
+      <Modal
+        open={appendOpen}
+        onClose={() => setAppendOpen(false)}
+        title="追記先のメモを選択"
+      >
+        {memoLoading ? (
+          <p className="text-[var(--text-tertiary)] text-sm py-4 text-center">読み込み中...</p>
+        ) : memoList.length === 0 ? (
+          <p className="text-[var(--text-tertiary)] text-sm py-4 text-center">メモがありません</p>
+        ) : (
+          <div className="max-h-60 overflow-y-auto space-y-1">
+            {memoList.map((memo) => (
+              <button
+                key={memo.filename}
+                onClick={() => handleAppendToMemo(memo)}
+                className="w-full text-left px-3 py-2 rounded-[var(--radius-md)] hover:bg-[var(--bg-hover)] transition-colors"
+              >
+                <div className="text-sm text-[var(--text-primary)] truncate">{memo.title}</div>
+                <div className="text-[10px] text-[var(--text-tertiary)]">{memo.created_at}</div>
+              </button>
+            ))}
+          </div>
+        )}
       </Modal>
     </div>
   );
