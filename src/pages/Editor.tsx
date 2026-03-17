@@ -13,6 +13,7 @@ import { EditorLayout } from '@/components/editor/EditorLayout';
 import { FileList } from '@/components/editor/FileList';
 import { LeftSidebarTabs } from '@/components/editor/LeftSidebarTabs';
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import { useChatStore } from '@/stores/chatStore';
 import { Button } from '@/components/ui';
 import type { ManuscriptFile } from '@/types';
 import * as commands from '@/lib/tauri-commands';
@@ -30,7 +31,22 @@ export default function EditorPage() {
     currentFile,
     toggleLeftSidebar,
     toggleRightSidebar,
+    rightSidebarOpen,
   } = useEditorStore();
+
+  const { sessions, switchSession } = useChatStore();
+
+  // メモのチャットリンクからセッションを開く
+  const handleOpenChatSession = useCallback((sessionId: string) => {
+    const session = sessions.find((s) => s.id === sessionId);
+    if (session) {
+      switchSession(session);
+      // 右サイドバーが閉じていたら開く
+      if (!rightSidebarOpen) {
+        toggleRightSidebar();
+      }
+    }
+  }, [sessions, switchSession, rightSidebarOpen, toggleRightSidebar]);
 
   const { recordWriting } = useWritingLogStore();
 
@@ -193,6 +209,7 @@ export default function EditorPage() {
             projectId={projectId}
             onFileSelect={selectFile}
             onCreateFile={handleCreateFile}
+            onOpenChatSession={handleOpenChatSession}
           />
         ) : (
           <FileList

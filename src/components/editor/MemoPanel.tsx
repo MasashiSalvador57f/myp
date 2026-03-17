@@ -9,14 +9,17 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CloseIcon from '@mui/icons-material/Close';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import type { MemoInfo, MemoDetail } from '@/types/memo';
 import * as commands from '@/lib/tauri-commands';
 
 interface MemoPanelProps {
   projectId: string;
+  /** チャットセッションリンクがクリックされた時 */
+  onOpenChatSession?: (sessionId: string) => void;
 }
 
-export function MemoPanel({ projectId }: MemoPanelProps) {
+export function MemoPanel({ projectId, onOpenChatSession }: MemoPanelProps) {
   const [memos, setMemos] = useState<MemoInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
@@ -306,6 +309,31 @@ export function MemoPanel({ projectId }: MemoPanelProps) {
                           未保存 — フォーカスを外すと自動保存
                         </Typography>
                       )}
+                      {/* チャットセッションリンク */}
+                      {onOpenChatSession && detail.body && (() => {
+                        const match = detail.body.match(/📎 チャットセッション: (session-[\w-]+)/);
+                        if (!match) return null;
+                        const sessionId = match[1];
+                        return (
+                          <Box
+                            onClick={() => onOpenChatSession(sessionId)}
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 0.5,
+                              cursor: 'pointer',
+                              color: 'primary.main',
+                              '&:hover': { textDecoration: 'underline' },
+                              mt: 0.5,
+                            }}
+                          >
+                            <ChatBubbleOutlineIcon sx={{ fontSize: 12 }} />
+                            <Typography variant="caption" sx={{ fontSize: '0.65rem' }}>
+                              元のチャットを開く
+                            </Typography>
+                          </Box>
+                        );
+                      })()}
                     </Box>
                   )}
                 </Box>
