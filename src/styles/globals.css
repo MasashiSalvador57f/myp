@@ -439,6 +439,7 @@ select {
 
 .vertical-editor-container {
   position: relative;
+  width: 100%;
 }
 
 .vertical-editor-display {
@@ -453,20 +454,48 @@ select {
   -webkit-user-select: none;
 }
 
+/* MUI Basic TextField 風の textarea */
 .vertical-editor-hidden-textarea {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
-  padding: 0;
-  border: none;
-  outline: none;
-  resize: none;
-  overflow: hidden;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   writing-mode: vertical-rl;
-  /* clip-path hides visually but IME still works */
-  clip-path: inset(50%);
   font-size: inherit;
+  font-family: inherit;
+  color: transparent;
+  caret-color: var(--text-primary);
+  background: transparent;
+  padding: 8px;
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid var(--border-default);
+  border-radius: 0;
+  outline: none;
+  box-shadow: none;
+  resize: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color var(--duration-normal) var(--ease-default);
+}
+
+.vertical-editor-hidden-textarea:hover {
+  border-bottom-color: var(--text-primary);
+}
+
+.vertical-editor-hidden-textarea:focus {
+  outline: none !important;
+  outline-width: 0 !important;
+  -webkit-focus-ring-color: transparent;
+  box-shadow: none !important;
+  border-bottom: 2px solid var(--accent-primary);
+}
+
+/* macOS WebKit ネイティブフォーカスリングを無効化 */
+.vertical-editor-hidden-textarea:focus-visible {
+  outline: none !important;
+  outline-width: 0 !important;
 }
 
 .vertical-editor-caret {

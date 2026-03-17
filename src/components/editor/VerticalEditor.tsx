@@ -671,6 +671,7 @@ export function VerticalEditor({
       <textarea
         ref={textareaRef}
         className="vertical-editor-hidden-textarea"
+        style={{ outline: 'none', WebkitAppearance: 'none', resize: 'none' }}
         onKeyDown={handleKeyDown}
         onCompositionStart={handleCompositionStart}
         onCompositionUpdate={handleCompositionUpdate}
