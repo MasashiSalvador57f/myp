@@ -24,6 +24,8 @@ pub struct AiSettings {
 pub struct StorageSettings {
     /// プロジェクトデータの保存先ディレクトリ (None = デフォルト ~/.mypwriter)
     pub data_dir: Option<String>,
+    /// メモの保存先ディレクトリ (None = デフォルト ~/.mypwriter/memos/)
+    pub memo_dir: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -60,7 +62,10 @@ impl Default for AiSettings {
 
 impl Default for StorageSettings {
     fn default() -> Self {
-        Self { data_dir: None }
+        Self {
+            data_dir: None,
+            memo_dir: None,
+        }
     }
 }
 

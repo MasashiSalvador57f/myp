@@ -229,6 +229,47 @@ export async function readChatHistory(
   });
 }
 
+// ─── アイデアメモ ───
+
+import type { MemoInfo, MemoDetail } from "../types/memo";
+
+/** 現在のメモ保存先ディレクトリパスを取得 */
+export async function getMemoDirPath(): Promise<string> {
+  return invoke<string>("get_memo_dir");
+}
+
+/** メモ一覧 (新しい順) */
+export async function listMemos(): Promise<MemoInfo[]> {
+  return invoke<MemoInfo[]>("list_memos");
+}
+
+/** メモ詳細読み込み */
+export async function readMemo(filename: string): Promise<MemoDetail> {
+  return invoke<MemoDetail>("read_memo", { filename });
+}
+
+/** 新規メモ作成 */
+export async function createMemo(
+  title: string,
+  body: string
+): Promise<MemoInfo> {
+  return invoke<MemoInfo>("create_memo", { title, body });
+}
+
+/** メモ更新 */
+export async function updateMemo(
+  filename: string,
+  title: string,
+  body: string
+): Promise<MemoInfo> {
+  return invoke<MemoInfo>("update_memo", { filename, title, body });
+}
+
+/** メモ削除 */
+export async function deleteMemo(filename: string): Promise<void> {
+  return invoke("delete_memo", { filename });
+}
+
 // ─── プロンプト管理 ───
 
 export interface PromptInfo {

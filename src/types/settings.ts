@@ -34,6 +34,8 @@ export interface AiSettings {
 export interface StorageSettings {
   /** データ保存先ディレクトリ (null=デフォルト ~/.mypwriter) */
   data_dir: string | null;
+  /** メモ保存先ディレクトリ (null=デフォルト ~/.mypwriter/memos/) */
+  memo_dir: string | null;
 }
 
 /** アプリ全体設定 (settings.toml) */

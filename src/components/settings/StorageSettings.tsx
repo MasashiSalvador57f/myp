@@ -7,10 +7,12 @@ import * as commands from "../../lib/tauri-commands";
 export function StorageSettings() {
   const { settings, updateStorageSettings } = useSettingsStore();
   const [currentPath, setCurrentPath] = useState<string>("");
+  const [memoPath, setMemoPath] = useState<string>("");
 
   useEffect(() => {
     commands.getDataDirPath().then(setCurrentPath).catch(() => {});
-  }, [settings.storage.data_dir]);
+    commands.getMemoDirPath().then(setMemoPath).catch(() => {});
+  }, [settings.storage.data_dir, settings.storage.memo_dir]);
 
   const handleSelectDir = async () => {
     const selected = await open({
@@ -62,6 +64,49 @@ export function StorageSettings() {
           <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
             デフォルト: ~/.mypwriter
           </p>
+        </div>
+      )}
+
+      {/* メモ保存先 */}
+      <div className="pt-4 border-t border-[var(--border-subtle)]">
+        <label className="text-xs font-medium text-[var(--text-secondary)] tracking-wide block mb-2">
+          メモ保存先ディレクトリ
+        </label>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 px-3 py-2.5 rounded-[var(--radius-lg)] bg-[var(--bg-tertiary)] border border-[var(--border-default)] text-sm text-[var(--text-primary)] font-mono truncate">
+            {memoPath || "読み込み中..."}
+          </div>
+          <Button variant="secondary" size="sm" onClick={async () => {
+            const selected = await open({
+              directory: true,
+              multiple: false,
+              title: "メモ保存先を選択",
+            });
+            if (typeof selected === "string") {
+              await updateStorageSettings({ memo_dir: selected });
+              setMemoPath(selected);
+            }
+          }}>
+            変更
+          </Button>
+        </div>
+        <p className="text-xs text-[var(--text-tertiary)] mt-2">
+          アイデアメモの保存先です。
+          {settings.storage.memo_dir
+            ? "カスタムディレクトリが設定されています。"
+            : "デフォルトのディレクトリ (~/.mypwriter/memos/) を使用中です。"}
+        </p>
+      </div>
+
+      {settings.storage.memo_dir && (
+        <div>
+          <Button variant="secondary" size="sm" onClick={async () => {
+            await updateStorageSettings({ memo_dir: null });
+            const defaultPath = await commands.getMemoDirPath();
+            setMemoPath(defaultPath);
+          }}>
+            メモ保存先をデフォルトに戻す
+          </Button>
         </div>
       )}
 

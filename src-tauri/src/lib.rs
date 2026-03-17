@@ -55,6 +55,13 @@ pub fn run() {
             commands::prompts::get_prompt,
             commands::prompts::save_custom_prompt,
             commands::prompts::delete_custom_prompt,
+            // ── アイデアメモ ──────────────────────────────────
+            commands::memo::get_memo_dir,
+            commands::memo::list_memos,
+            commands::memo::read_memo,
+            commands::memo::create_memo,
+            commands::memo::update_memo,
+            commands::memo::delete_memo,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

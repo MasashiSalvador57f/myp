@@ -18,6 +18,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   },
   storage: {
     data_dir: null,
+    memo_dir: null,
   },
 };
 

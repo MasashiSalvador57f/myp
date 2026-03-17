@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui";
 import { Heatmap } from "../components/dashboard/Heatmap";
@@ -6,9 +6,13 @@ import { WeeklyStats } from "../components/dashboard/WeeklyStats";
 import { StatsOverview } from "../components/dashboard/StatsOverview";
 import { ProjectCard } from "../components/dashboard/ProjectCard";
 import { NewProjectModal } from "../components/dashboard/NewProjectModal";
+import { MemoQuickAdd } from "../components/memo/MemoQuickAdd";
+import { MemoList } from "../components/memo/MemoList";
 import { useProjectStore } from "../stores/projectStore";
 import { useWritingLogStore } from "../stores/writingLogStore";
 import { useTheme } from "../components/ui/ThemeProvider";
+import type { MemoInfo } from "../types/memo";
+import * as commands from "../lib/tauri-commands";
 
 export default function HomePage() {
   const { projects, loading: projectLoading, loadProjects, createProject } =
@@ -24,9 +28,27 @@ export default function HomePage() {
   const [newProjectOpen, setNewProjectOpen] = useState(false);
   const [heatmapPeriodLabel, setHeatmapPeriodLabel] = useState("1年");
 
+  // メモ関連
+  const [memos, setMemos] = useState<MemoInfo[]>([]);
+  const [memoLoading, setMemoLoading] = useState(false);
+
+  const loadMemos = useCallback(async () => {
+    setMemoLoading(true);
+    try {
+      const list = await commands.listMemos();
+      setMemos(list);
+    } catch {
+      // バックエンド未実装時は空リスト
+      setMemos([]);
+    } finally {
+      setMemoLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadProjects();
     loadDashboardData();
+    loadMemos();
   }, []);
 
   const total7Days = weeklySummary?.total_chars ?? 0;
@@ -176,6 +198,19 @@ export default function HomePage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* アイデアメモ */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[var(--text-primary)] font-medium text-sm">
+              アイデアメモ
+            </h2>
+          </div>
+          <div className="space-y-3">
+            <MemoQuickAdd onCreated={loadMemos} />
+            <MemoList memos={memos} loading={memoLoading} onDeleted={loadMemos} onUpdated={loadMemos} />
+          </div>
         </section>
       </main>
 
