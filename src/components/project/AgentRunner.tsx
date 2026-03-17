@@ -17,6 +17,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import StopIcon from "@mui/icons-material/Stop";
+import AddTaskIcon from "@mui/icons-material/AddTask";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button, Modal } from "../ui";
@@ -29,6 +30,11 @@ import {
 import * as commands from "../../lib/tauri-commands";
 import type { ManuscriptFile, MemoInfo } from "../../types";
 
+interface TaskCandidate {
+  title: string;
+  body: string;
+}
+
 interface AgentExecution {
   id: string;
   agentId: string;
@@ -37,8 +43,54 @@ interface AgentExecution {
   fileLabel: string;
   status: "running" | "completed" | "error";
   result: string;
+  tasks: TaskCandidate[];
   startedAt: string;
   completedAt?: string;
+}
+
+// ```tasks ... ``` / ```json ... ``` / 裸の [...] などの形式に対応
+const TASK_FENCED_RE = /```(?:tasks|json)\s*\n?([\s\S]*?)```/;
+const TASK_NAKED_JSON_RE = /(?:^|\n)(改善タスク[^\n]*\n)?\s*(\[\s*\n?\s*\{[\s\S]*?\}\s*\n?\s*\])\s*$/;
+
+function tryParseTaskArray(jsonStr: string): TaskCandidate[] | null {
+  try {
+    const parsed = JSON.parse(jsonStr);
+    if (!Array.isArray(parsed)) return null;
+    const tasks = parsed
+      .filter((t: unknown): t is Record<string, unknown> => typeof t === "object" && t !== null && "title" in t)
+      .map((t) => ({
+        title: String(t.title ?? ""),
+        body: String(t.body ?? ""),
+      }));
+    return tasks.length > 0 ? tasks : null;
+  } catch {
+    return null;
+  }
+}
+
+/** AIの出力からタスク候補JSONを抽出し、本文とタスクを分離する */
+function parseTasksFromResult(raw: string): { body: string; tasks: TaskCandidate[] } {
+  // 1. ```tasks ... ``` or ```json ... ``` のフェンスブロック
+  const fencedMatch = raw.match(TASK_FENCED_RE);
+  if (fencedMatch) {
+    const tasks = tryParseTaskArray(fencedMatch[1]);
+    if (tasks) {
+      const body = raw.replace(TASK_FENCED_RE, "").trimEnd();
+      return { body, tasks };
+    }
+  }
+
+  // 2. 末尾の裸のJSON配列（見出しテキスト付きも含む）
+  const nakedMatch = raw.match(TASK_NAKED_JSON_RE);
+  if (nakedMatch) {
+    const tasks = tryParseTaskArray(nakedMatch[2]);
+    if (tasks) {
+      const body = raw.replace(TASK_NAKED_JSON_RE, "").trimEnd();
+      return { body, tasks };
+    }
+  }
+
+  return { body: raw, tasks: [] };
 }
 
 interface AgentRunnerProps {
@@ -51,7 +103,10 @@ const HISTORY_KEY_PREFIX = "mypwriter-agent-history-";
 function loadHistory(projectId: string): AgentExecution[] {
   try {
     const raw = localStorage.getItem(HISTORY_KEY_PREFIX + projectId);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as AgentExecution[];
+    // 古いデータにtasksフィールドがない場合を補完
+    return arr.map((h) => ({ ...h, tasks: h.tasks ?? [] }));
   } catch {
     return [];
   }
@@ -93,6 +148,10 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
   const [appendContent, setAppendContent] = useState("");
   const [memoList, setMemoList] = useState<MemoInfo[]>([]);
   const [memoLoading, setMemoLoading] = useState(false);
+
+  // タスク候補選択
+  const [checkedTasks, setCheckedTasks] = useState<Set<number>>(new Set());
+  const [taskAdding, setTaskAdding] = useState(false);
 
   // メモ一覧を読み込み
   useEffect(() => {
@@ -205,6 +264,35 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
     void handleOpenAppend(text);
   }, [selectionToolbar, handleOpenAppend]);
 
+  // タスク候補のチェック切り替え
+  const handleToggleTask = useCallback((index: number) => {
+    setCheckedTasks((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
+
+  // チェックしたタスクをタスクリストに追加
+  const handleAddTasks = useCallback(async () => {
+    if (!detailExecution || checkedTasks.size === 0) return;
+    setTaskAdding(true);
+    try {
+      for (const idx of checkedTasks) {
+        const task = detailExecution.tasks[idx];
+        if (task) {
+          await commands.createTask(task.title, task.body, projectId);
+        }
+      }
+      setCheckedTasks(new Set());
+    } catch (e) {
+      console.error("タスクの追加に失敗:", e);
+    } finally {
+      setTaskAdding(false);
+    }
+  }, [detailExecution, checkedTasks, projectId]);
+
   const runningCount = history.filter((h) => h.status === "running").length;
 
   /** 実行中のエージェントを停止し、一覧から削除 */
@@ -280,6 +368,7 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
       fileLabel,
       status: "running",
       result: "",
+      tasks: [],
       startedAt: new Date().toISOString(),
     };
 
@@ -322,11 +411,18 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
       const aiMessages: AIMessage[] = [
         {
           role: "user",
-          content: "上記のテキストを分析してください。",
+          content: `上記のテキストを分析してください。
+
+分析の最後に、この分析から導かれる具体的な改善タスクを以下の形式で出力してください。タスクは必ず以下のコードブロック形式で出力してください:
+
+\`\`\`tasks
+[{"title": "タスクのタイトル", "body": "タスクの詳細説明"}, ...]
+\`\`\``,
         },
       ];
 
-      const result = await sendAI(aiConfig, systemPrompt, aiMessages, abortController.signal);
+      const rawResult = await sendAI(aiConfig, systemPrompt, aiMessages, abortController.signal);
+      const { body: resultBody, tasks: extractedTasks } = parseTasksFromResult(rawResult);
 
       abortControllersRef.current.delete(executionId);
       setHistory((prev) =>
@@ -335,7 +431,8 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
             ? {
                 ...h,
                 status: "completed" as const,
-                result,
+                result: resultBody,
+                tasks: extractedTasks,
                 completedAt: new Date().toISOString(),
               }
             : h
@@ -441,6 +538,77 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{detailExecution.result}</ReactMarkdown>
           </div>
         </Box>
+
+        {/* タスク候補 */}
+        {(detailExecution.tasks ?? []).length > 0 && (
+          <Box>
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+              <Typography
+                variant="caption"
+                fontWeight={500}
+                color="text.secondary"
+                sx={{ letterSpacing: "0.04em" }}
+              >
+                タスク候補（{detailExecution.tasks.length}件）
+              </Typography>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleAddTasks}
+                disabled={checkedTasks.size === 0 || taskAdding}
+                loading={taskAdding}
+                icon={<AddTaskIcon sx={{ fontSize: 14 }} />}
+              >
+                {checkedTasks.size > 0 ? `${checkedTasks.size}件をタスクに追加` : "タスクに追加"}
+              </Button>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 0.5,
+                p: 1.5,
+                borderRadius: "var(--radius-lg)",
+                border: "1px solid",
+                borderColor: "divider",
+                bgcolor: "var(--bg-tertiary)",
+              }}
+            >
+              {detailExecution.tasks.map((task, idx) => (
+                <Box
+                  key={idx}
+                  onClick={() => handleToggleTask(idx)}
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 1,
+                    p: 1,
+                    borderRadius: "var(--radius-md)",
+                    cursor: "pointer",
+                    transition: "background-color 0.1s",
+                    "&:hover": { bgcolor: "action.hover" },
+                  }}
+                >
+                  <Checkbox
+                    size="small"
+                    checked={checkedTasks.has(idx)}
+                    sx={{ p: 0, mt: 0.25 }}
+                  />
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={500} color="text.primary" sx={{ fontSize: "0.8rem" }}>
+                      {task.title}
+                    </Typography>
+                    {task.body && (
+                      <Typography variant="caption" color="text.disabled" sx={{ fontSize: "0.7rem", lineHeight: 1.5 }}>
+                        {task.body}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+        )}
 
         {/* メモ追記先選択モーダル */}
         <Modal
@@ -589,9 +757,20 @@ export function AgentRunner({ projectId, manuscripts }: AgentRunnerProps) {
             {history.map((exec) => (
               <Box
                 key={exec.id}
-                onClick={() =>
-                  exec.status !== "running" ? setDetailExecution(exec) : undefined
-                }
+                onClick={() => {
+                  if (exec.status !== "running") {
+                    setCheckedTasks(new Set());
+                    // 古い履歴でtasksが未パースの場合はここでパース
+                    if (exec.tasks.length === 0 && exec.result && (TASK_FENCED_RE.test(exec.result) || TASK_NAKED_JSON_RE.test(exec.result))) {
+                      const { body, tasks } = parseTasksFromResult(exec.result);
+                      const updated = { ...exec, result: body, tasks };
+                      setHistory((prev) => prev.map((h) => h.id === exec.id ? updated : h));
+                      setDetailExecution(updated);
+                    } else {
+                      setDetailExecution(exec);
+                    }
+                  }
+                }}
                 sx={{
                   p: 1.5,
                   borderRadius: "var(--radius-lg)",

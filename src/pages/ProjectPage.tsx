@@ -12,6 +12,7 @@ import { ChapterList } from "../components/project/ChapterList";
 import { ProgressBar } from "../components/project/ProgressBar";
 import { RecentChats } from "../components/project/RecentChats";
 import { AgentRunner } from "../components/project/AgentRunner";
+import { ProjectTaskList } from "../components/project/ProjectTaskList";
 import { ChatPanel } from "../components/chat/ChatPanel";
 import { useProjectStore } from "../stores/projectStore";
 import * as commands from "../lib/tauri-commands";
@@ -107,6 +108,11 @@ export default function ProjectPage() {
               onCreateFile={handleCreateFile}
               onDeleteFile={handleDeleteFile}
             />
+          </Paper>
+
+          {/* タスク */}
+          <Paper variant="outlined" sx={{ p: 2.5 }}>
+            <ProjectTaskList projectId={projectId!} />
           </Paper>
 
           {/* エージェント実行 */}
