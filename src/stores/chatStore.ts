@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { ChatSession, ChatMessage, PresetAgent } from "../types";
 import * as commands from "../lib/tauri-commands";
 import { streamChatMessage, type AIMessage, type AIServiceConfig } from "../lib/ai-service";
+import { getAllAgents } from "../components/settings/AgentSettings";
 
 /** プリセットエージェント定義 */
 export const PRESET_AGENTS: PresetAgent[] = [
@@ -85,7 +86,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   error: null,
 
   startNewSession: (projectId: string, agentId: string) => {
-    const agent = PRESET_AGENTS.find((a) => a.id === agentId) ?? PRESET_AGENTS[0];
+    const allAgents = getAllAgents();
+    const agent = allAgents.find((a) => a.id === agentId) ?? allAgents[0];
     const session: ChatSession = {
       id: generateId(),
       title: `${agent.name}との相談`,
@@ -112,8 +114,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
     let session = state.currentSession;
     if (!session) {
       const agent =
-        PRESET_AGENTS.find((a) => a.id === state.selectedAgentId) ??
-        PRESET_AGENTS[0];
+        getAllAgents().find((a) => a.id === state.selectedAgentId) ??
+        getAllAgents()[0];
       session = {
         id: generateId(),
         title: `${agent.name}との相談`,
@@ -151,7 +153,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
 
     // システムプロンプトを構築
-    const agentDef = PRESET_AGENTS.find((a) => a.id === session!.agent) ?? PRESET_AGENTS[0];
+    const agentDef = getAllAgents().find((a) => a.id === session!.agent) ?? getAllAgents()[0];
     let systemPrompt = agentDef.system_prompt;
     if (context) {
       systemPrompt += `\n\n---\n以下は参照中の原稿テキストです:\n${context}`;

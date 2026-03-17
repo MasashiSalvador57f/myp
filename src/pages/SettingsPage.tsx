@@ -13,9 +13,10 @@ import { AISettings } from "../components/settings/AISettings";
 import { PromptManager } from "../components/settings/PromptManager";
 import { StorageSettings } from "../components/settings/StorageSettings";
 import { ThemeSettings } from "../components/settings/ThemeSettings";
+import { AgentSettings } from "../components/settings/AgentSettings";
 import { useSettingsStore } from "../stores/settingsStore";
 
-type SettingsTab = "theme" | "font" | "layout" | "storage" | "ai" | "prompts";
+type SettingsTab = "theme" | "font" | "layout" | "storage" | "ai" | "agents" | "prompts";
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "theme", label: "テーマ" },
@@ -23,6 +24,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: "layout", label: "レイアウト" },
   { id: "storage", label: "保存先" },
   { id: "ai", label: "AI設定" },
+  { id: "agents", label: "エージェント" },
   { id: "prompts", label: "プロンプト管理" },
 ];
 
@@ -125,6 +127,14 @@ export default function SettingsPage() {
                   AI設定
                 </Typography>
                 <AISettings />
+              </section>
+            )}
+            {activeTab === "agents" && (
+              <section>
+                <Typography variant="h3" fontWeight={500} color="text.primary" mb={2.5}>
+                  エージェント設定
+                </Typography>
+                <AgentSettings />
               </section>
             )}
             {activeTab === "prompts" && (
