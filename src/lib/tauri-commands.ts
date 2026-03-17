@@ -251,18 +251,20 @@ export async function readMemo(filename: string): Promise<MemoDetail> {
 /** 新規メモ作成 */
 export async function createMemo(
   title: string,
-  body: string
+  body: string,
+  projectId?: string | null
 ): Promise<MemoInfo> {
-  return invoke<MemoInfo>("create_memo", { title, body });
+  return invoke<MemoInfo>("create_memo", { title, body, projectId: projectId ?? null });
 }
 
 /** メモ更新 */
 export async function updateMemo(
   filename: string,
   title: string,
-  body: string
+  body: string,
+  projectId?: string | null
 ): Promise<MemoInfo> {
-  return invoke<MemoInfo>("update_memo", { filename, title, body });
+  return invoke<MemoInfo>("update_memo", { filename, title, body, projectId: projectId ?? null });
 }
 
 /** メモ削除 */
@@ -307,4 +309,43 @@ export async function saveCustomPrompt(
 /** カスタムプロンプト削除 */
 export async function deleteCustomPrompt(id: string): Promise<void> {
   return invoke("delete_custom_prompt", { id });
+}
+
+// ─── タスク管理 ───
+
+import type { TaskInfo, TaskDetail } from "../types/task";
+
+/** タスク一覧 (新しい順、project_id でフィルタ可能) */
+export async function listTasks(projectId?: string | null): Promise<TaskInfo[]> {
+  return invoke<TaskInfo[]>("list_tasks", { projectId: projectId ?? null });
+}
+
+/** タスク詳細読み込み */
+export async function readTask(filename: string): Promise<TaskDetail> {
+  return invoke<TaskDetail>("read_task", { filename });
+}
+
+/** 新規タスク作成 */
+export async function createTask(
+  title: string,
+  body: string,
+  projectId?: string | null
+): Promise<TaskInfo> {
+  return invoke<TaskInfo>("create_task", { title, body, projectId: projectId ?? null });
+}
+
+/** タスク更新 */
+export async function updateTask(
+  filename: string,
+  title: string,
+  body: string,
+  done: boolean,
+  projectId?: string | null
+): Promise<TaskInfo> {
+  return invoke<TaskInfo>("update_task", { filename, title, body, done, projectId: projectId ?? null });
+}
+
+/** タスク削除 (アーカイブ) */
+export async function deleteTask(filename: string): Promise<void> {
+  return invoke("delete_task", { filename });
 }

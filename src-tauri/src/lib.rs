@@ -62,6 +62,12 @@ pub fn run() {
             commands::memo::create_memo,
             commands::memo::update_memo,
             commands::memo::delete_memo,
+            // ── タスク管理 ────────────────────────────────────
+            commands::task::list_tasks,
+            commands::task::read_task,
+            commands::task::create_task,
+            commands::task::update_task,
+            commands::task::delete_task,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

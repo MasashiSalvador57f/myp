@@ -11,6 +11,7 @@ import { Editor } from '@/components/editor/Editor';
 import { EditorToolbar } from '@/components/editor/EditorToolbar';
 import { EditorLayout } from '@/components/editor/EditorLayout';
 import { FileList } from '@/components/editor/FileList';
+import { LeftSidebarTabs } from '@/components/editor/LeftSidebarTabs';
 import { Button } from '@/components/ui';
 import type { ManuscriptFile } from '@/types';
 import * as commands from '@/lib/tauri-commands';
@@ -186,10 +187,18 @@ export default function EditorPage() {
         </Box>
       }
       leftSidebar={
-        <FileList
-          onFileSelect={selectFile}
-          onCreateFile={handleCreateFile}
-        />
+        projectId ? (
+          <LeftSidebarTabs
+            projectId={projectId}
+            onFileSelect={selectFile}
+            onCreateFile={handleCreateFile}
+          />
+        ) : (
+          <FileList
+            onFileSelect={selectFile}
+            onCreateFile={handleCreateFile}
+          />
+        )
       }
       editor={<Editor onSave={handleSave} />}
       rightPanel={<div />}

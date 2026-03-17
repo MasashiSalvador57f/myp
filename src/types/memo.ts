@@ -8,6 +8,7 @@ export interface MemoInfo {
   filename: string;
   title: string;
   created_at: string;
+  project_id: string | null;
 }
 
 /** メモ詳細 (本文を含む) */
@@ -16,4 +17,5 @@ export interface MemoDetail {
   title: string;
   body: string;
   created_at: string;
+  project_id: string | null;
 }

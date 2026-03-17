@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Paper from "@mui/material/Paper";
 import TextField from "@mui/material/TextField";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
 import { Button } from "../ui";
+import { useProjectStore } from "../../stores/projectStore";
 import * as commands from "../../lib/tauri-commands";
 
 interface MemoQuickAddProps {
@@ -13,13 +17,23 @@ interface MemoQuickAddProps {
 export function MemoQuickAdd({ onCreated }: MemoQuickAddProps) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [projectId, setProjectId] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const { projects, loadProjects } = useProjectStore();
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
 
   const handleSubmit = async () => {
     if (!title.trim() && !body.trim()) return;
     setSaving(true);
     try {
-      await commands.createMemo(title.trim() || "(無題)", body);
+      await commands.createMemo(
+        title.trim() || "(無題)",
+        body,
+        projectId || null
+      );
       setTitle("");
       setBody("");
       onCreated();
@@ -64,10 +78,29 @@ export function MemoQuickAdd({ onCreated }: MemoQuickAddProps) {
         multiline
         rows={3}
       />
-      <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
-        <Typography variant="caption" color="text.disabled">
-          Cmd+Enter で送信
-        </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mt={1} gap={1}>
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <Typography variant="caption" color="text.disabled">
+            Cmd+Enter で送信
+          </Typography>
+          <FormControl size="small" sx={{ minWidth: 140 }}>
+            <Select
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              displayEmpty
+              sx={{ fontSize: '0.75rem', height: 28 }}
+            >
+              <MenuItem value="">
+                <Typography variant="caption" color="text.secondary">プロジェクトなし</Typography>
+              </MenuItem>
+              {projects.map((p) => (
+                <MenuItem key={p.id} value={p.id}>
+                  <Typography variant="caption">{p.name}</Typography>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
         <Button
           variant="primary"
           size="sm"

@@ -101,9 +101,7 @@ export function EditorLayout({
                 </Typography>
               </Box>
               <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-                <Typography variant="caption" color="text.disabled">
-                  AI相談パネル（実装予定）
-                </Typography>
+                {rightPanel}
               </Box>
             </Box>
           </Box>

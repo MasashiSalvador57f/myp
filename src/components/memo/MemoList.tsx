@@ -2,13 +2,18 @@ import { useState, useEffect, useCallback } from "react";
 import Card from "@mui/material/Card";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
 import IconButton from "@mui/material/IconButton";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import MuiButton from "@mui/material/Button";
 import type { MemoInfo, MemoDetail } from "../../types/memo";
+import { useProjectStore } from "../../stores/projectStore";
 import * as commands from "../../lib/tauri-commands";
 
 interface MemoListProps {
@@ -23,9 +28,11 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
   const [detail, setDetail] = useState<MemoDetail | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editBody, setEditBody] = useState("");
+  const [editProjectId, setEditProjectId] = useState<string>("");
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [previews, setPreviews] = useState<Record<string, string>>({});
+  const { projects } = useProjectStore();
 
   // カードに本文プレビューを表示するため、全メモの先頭数行を取得
   useEffect(() => {
@@ -48,7 +55,7 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
     if (openFile && dirty) {
       setSaving(true);
       try {
-        await commands.updateMemo(openFile, editTitle.trim() || "(無題)", editBody);
+        await commands.updateMemo(openFile, editTitle.trim() || "(無題)", editBody, editProjectId || null);
         setDirty(false);
         onUpdated();
       } catch (e) {
@@ -59,7 +66,7 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
     }
     setOpenFile(null);
     setDetail(null);
-  }, [openFile, dirty, editTitle, editBody, onUpdated]);
+  }, [openFile, dirty, editTitle, editBody, editProjectId, onUpdated]);
 
   const handleOpen = async (filename: string) => {
     setOpenFile(filename);
@@ -69,6 +76,7 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
       setDetail(d);
       setEditTitle(d.title === "(無題)" ? "" : d.title);
       setEditBody(d.body);
+      setEditProjectId(d.project_id ?? "");
     } catch (e) {
       console.error("メモの読み込みに失敗:", e);
     }
@@ -149,6 +157,12 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
                   {preview}
                 </Typography>
               )}
+              {memo.project_id && (() => {
+                const proj = projects.find((p) => p.id === memo.project_id);
+                return proj ? (
+                  <Chip label={proj.name} size="small" sx={{ mt: 0.5, fontSize: '0.625rem', height: 20 }} />
+                ) : null;
+              })()}
               <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
                 <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.625rem' }}>
                   {memo.created_at}
@@ -215,6 +229,23 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
                   },
                 }}
               />
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <Select
+                  value={editProjectId}
+                  onChange={(e) => { setEditProjectId(e.target.value); setDirty(true); }}
+                  displayEmpty
+                  sx={{ fontSize: '0.75rem', height: 28 }}
+                >
+                  <MenuItem value="">
+                    <Typography variant="caption" color="text.secondary">プロジェクトなし</Typography>
+                  </MenuItem>
+                  {projects.map((p) => (
+                    <MenuItem key={p.id} value={p.id}>
+                      <Typography variant="caption">{p.name}</Typography>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
               <Box display="flex" alignItems="center" justifyContent="space-between" pt={1} sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
                 <Box display="flex" alignItems="center" gap={1.5}>
                   <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.625rem' }}>

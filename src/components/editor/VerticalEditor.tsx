@@ -273,6 +273,8 @@ export function VerticalEditor({
 
       // --- Enter ---
       if (e.key === 'Enter') {
+        // IME変換中のEnter（確定）は無視する
+        if (composingRef.current) return;
         e.preventDefault();
         if (selection) {
           const selStart = Math.min(selection.start, selection.end);
