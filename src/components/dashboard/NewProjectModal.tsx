@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Box from "@mui/material/Box";
 import { Modal, Button, Input } from "../ui";
 
 interface NewProjectModalProps {
@@ -26,7 +27,7 @@ export function NewProjectModal({ open, onClose, onCreate }: NewProjectModalProp
       setName("");
       setTargetStr("");
       onClose();
-    } catch (e) {
+    } catch {
       setError("作成に失敗しました。もう一度お試しください。");
     } finally {
       setLoading(false);
@@ -56,7 +57,7 @@ export function NewProjectModal({ open, onClose, onCreate }: NewProjectModalProp
         </>
       }
     >
-      <div className="space-y-4">
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Input
           label="プロジェクト名"
           placeholder="例: 夏の短編小説"
@@ -75,7 +76,7 @@ export function NewProjectModal({ open, onClose, onCreate }: NewProjectModalProp
           onChange={(e) => setTargetStr(e.target.value)}
           hint="入力しない場合は目標なしになります"
         />
-      </div>
+      </Box>
     </Modal>
   );
 }

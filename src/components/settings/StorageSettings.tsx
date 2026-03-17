@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Paper from "@mui/material/Paper";
 import { Button } from "../ui";
 import { useSettingsStore } from "../../stores/settingsStore";
 import * as commands from "../../lib/tauri-commands";
@@ -35,47 +38,75 @@ export function StorageSettings() {
   const isCustom = settings.storage.data_dir != null && settings.storage.data_dir !== "";
 
   return (
-    <div className="space-y-5">
-      <div>
-        <label className="text-xs font-medium text-[var(--text-secondary)] tracking-wide block mb-2">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      <Box>
+        <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: '0.04em' }}>
           データ保存先ディレクトリ
-        </label>
-        <div className="flex items-center gap-3">
-          <div className="flex-1 px-3 py-2.5 rounded-[var(--radius-lg)] bg-[var(--bg-tertiary)] border border-[var(--border-default)] text-sm text-[var(--text-primary)] font-mono truncate">
+        </Typography>
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <Paper
+            variant="outlined"
+            sx={{
+              flex: 1,
+              px: 1.5,
+              py: 1.25,
+              borderRadius: 'var(--radius-lg)',
+              fontSize: '0.875rem',
+              fontFamily: 'monospace',
+              color: 'text.primary',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {currentPath || "読み込み中..."}
-          </div>
+          </Paper>
           <Button variant="secondary" size="sm" onClick={handleSelectDir}>
             変更
           </Button>
-        </div>
-        <p className="text-xs text-[var(--text-tertiary)] mt-2">
+        </Box>
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1 }}>
           プロジェクト・原稿・チャット履歴・執筆ログの保存先です。
           {isCustom
             ? "カスタムディレクトリが設定されています。"
             : "デフォルトのディレクトリを使用中です。"}
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
       {isCustom && (
-        <div>
+        <Box>
           <Button variant="secondary" size="sm" onClick={handleReset}>
             デフォルトに戻す
           </Button>
-          <p className="text-xs text-[var(--text-tertiary)] mt-1.5">
+          <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.75 }}>
             デフォルト: ~/.mypwriter
-          </p>
-        </div>
+          </Typography>
+        </Box>
       )}
 
       {/* メモ保存先 */}
-      <div className="pt-4 border-t border-[var(--border-subtle)]">
-        <label className="text-xs font-medium text-[var(--text-secondary)] tracking-wide block mb-2">
+      <Box sx={{ pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: '0.04em' }}>
           メモ保存先ディレクトリ
-        </label>
-        <div className="flex items-center gap-3">
-          <div className="flex-1 px-3 py-2.5 rounded-[var(--radius-lg)] bg-[var(--bg-tertiary)] border border-[var(--border-default)] text-sm text-[var(--text-primary)] font-mono truncate">
+        </Typography>
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <Paper
+            variant="outlined"
+            sx={{
+              flex: 1,
+              px: 1.5,
+              py: 1.25,
+              borderRadius: 'var(--radius-lg)',
+              fontSize: '0.875rem',
+              fontFamily: 'monospace',
+              color: 'text.primary',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
             {memoPath || "読み込み中..."}
-          </div>
+          </Paper>
           <Button variant="secondary" size="sm" onClick={async () => {
             const selected = await open({
               directory: true,
@@ -89,17 +120,17 @@ export function StorageSettings() {
           }}>
             変更
           </Button>
-        </div>
-        <p className="text-xs text-[var(--text-tertiary)] mt-2">
+        </Box>
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1 }}>
           アイデアメモの保存先です。
           {settings.storage.memo_dir
             ? "カスタムディレクトリが設定されています。"
             : "デフォルトのディレクトリ (~/.mypwriter/memos/) を使用中です。"}
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
       {settings.storage.memo_dir && (
-        <div>
+        <Box>
           <Button variant="secondary" size="sm" onClick={async () => {
             await updateStorageSettings({ memo_dir: null });
             const defaultPath = await commands.getMemoDirPath();
@@ -107,15 +138,18 @@ export function StorageSettings() {
           }}>
             メモ保存先をデフォルトに戻す
           </Button>
-        </div>
+        </Box>
       )}
 
-      <div className="p-3 rounded-[var(--radius-lg)] bg-[var(--bg-secondary)] border border-[var(--border-subtle)]">
-        <p className="text-xs text-[var(--text-tertiary)] leading-relaxed">
+      <Paper
+        variant="outlined"
+        sx={{ p: 1.5, borderRadius: 'var(--radius-lg)' }}
+      >
+        <Typography variant="caption" color="text.disabled" sx={{ lineHeight: 1.6 }}>
           保存先を変更しても、既存のデータは自動的には移動されません。
           必要に応じて手動でファイルをコピーしてください。
-        </p>
-      </div>
-    </div>
+        </Typography>
+      </Paper>
+    </Box>
   );
 }

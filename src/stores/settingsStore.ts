@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     writing_mode: "vertical",
     chars_per_line: 40,
     theme: "dark",
+    color_preset: "default",
   },
   ai: {
     api_key: null,

@@ -1,4 +1,10 @@
-import { useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
 
 interface ModalProps {
   /** Whether the modal is open */
@@ -25,102 +31,51 @@ export function Modal({
   closeOnOverlayClick = true,
   children,
 }: ModalProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Sync open state with dialog element
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (open && !dialog.open) {
-      dialog.showModal();
-    } else if (!open && dialog.open) {
-      dialog.close();
-    }
-  }, [open]);
-
-  // Handle Escape key (native dialog behavior)
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    const handleCancel = (e: Event) => {
-      e.preventDefault();
-      onClose();
-    };
-    dialog.addEventListener('cancel', handleCancel);
-    return () => dialog.removeEventListener('cancel', handleCancel);
-  }, [onClose]);
-
-  // Handle overlay click
-  const handleBackdropClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (closeOnOverlayClick && contentRef.current && !contentRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    },
-    [closeOnOverlayClick, onClose],
-  );
-
-  if (!open) return null;
-
   return (
-    <dialog
-      ref={dialogRef}
-      className={[
-        'fixed inset-0 z-[var(--z-modal)] m-0 p-0 w-full h-full max-w-none max-h-none',
-        'bg-transparent backdrop:bg-transparent',
-        // We handle overlay ourselves for animation control
-      ].join(' ')}
-      onClick={handleBackdropClick}
-      aria-modal="true"
+    <Dialog
+      open={open}
+      onClose={closeOnOverlayClick ? onClose : undefined}
+      maxWidth={false}
+      PaperProps={{
+        sx: {
+          maxWidth,
+          width: '100%',
+          m: 3,
+        },
+      }}
     >
-      {/* Overlay */}
-      <div className="fixed inset-0 bg-[var(--bg-overlay)] animate-[fadeIn_200ms_ease-out]" />
-
-      {/* Centering container */}
-      <div className="fixed inset-0 flex items-center justify-center p-6">
-        {/* Modal content */}
-        <div
-          ref={contentRef}
-          className="relative w-full bg-[var(--bg-elevated)] rounded-[var(--radius-2xl)] shadow-[var(--shadow-xl)] animate-[scaleIn_200ms_ease-out]"
-          style={{ maxWidth }}
-          role="document"
+      {title && (
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '1.125rem',
+            fontWeight: 600,
+            pb: 0,
+          }}
         >
-          {/* Header */}
-          {title && (
-            <div className="flex items-center justify-between px-6 pt-6 pb-0">
-              <h2 className="text-lg font-semibold text-[var(--text-primary)]">{title}</h2>
-              <button
-                onClick={onClose}
-                className="flex items-center justify-center w-8 h-8 rounded-[var(--radius-md)] text-[var(--text-tertiary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] transition-colors"
-                aria-label="閉じる"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-          )}
+          {title}
+          <IconButton
+            onClick={onClose}
+            size="small"
+            aria-label="閉じる"
+            sx={{ color: 'text.secondary' }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+      )}
 
-          {/* Body */}
-          <div className="px-6 py-5 text-sm text-[var(--text-secondary)]">{children}</div>
+      <DialogContent sx={{ pt: title ? 2.5 : undefined, pb: footer ? 1 : undefined }}>
+        {children}
+      </DialogContent>
 
-          {/* Footer */}
-          {footer && (
-            <div className="flex items-center justify-end gap-2 px-6 pb-6 pt-0">
-              {footer}
-            </div>
-          )}
-        </div>
-      </div>
-    </dialog>
+      {footer && (
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          {footer}
+        </DialogActions>
+      )}
+    </Dialog>
   );
 }
-
-// Keyframe animations (add to globals.css or inline)
-// These are defined as Tailwind arbitrary animations above
-// @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-// @keyframes scaleIn { from { opacity: 0; transform: scale(0.96) } to { opacity: 1; transform: scale(1) } }

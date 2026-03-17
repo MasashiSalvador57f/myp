@@ -1,3 +1,5 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { Button } from "../ui";
 import { useSettingsStore } from "../../stores/settingsStore";
 import type { WritingDirection } from "../../types";
@@ -9,49 +11,62 @@ export function LayoutSettings() {
   const { writing_mode, chars_per_line } = settings.editor;
 
   return (
-    <div className="space-y-5">
-      <div>
-        <label className="text-xs font-medium text-[var(--text-secondary)] tracking-wide block mb-2">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      <Box>
+        <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: '0.04em' }}>
           デフォルト表示方向
-        </label>
-        <div className="flex gap-2">
+        </Typography>
+        <Box display="flex" gap={1}>
           {(
             [
               { value: "vertical" as WritingDirection, label: "縦書き", icon: "縦" },
               { value: "horizontal" as WritingDirection, label: "横書き", icon: "横" },
             ] as const
           ).map(({ value, label, icon }) => (
-            <button
+            <Box
               key={value}
-              className={[
-                "flex-1 flex flex-col items-center gap-2 py-4 rounded-[var(--radius-xl)] border transition-colors",
-                writing_mode === value
-                  ? "bg-[var(--accent-subtle)] border-[var(--accent-primary)] text-[var(--text-primary)]"
-                  : "border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
-              ].join(" ")}
-              onClick={() =>
-                updateEditorSettings({ writing_mode: value })
-              }
+              component="button"
+              onClick={() => updateEditorSettings({ writing_mode: value })}
+              sx={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 1,
+                py: 2,
+                borderRadius: 'var(--radius-xl)',
+                border: '1px solid',
+                borderColor: writing_mode === value ? 'primary.main' : 'divider',
+                bgcolor: writing_mode === value ? 'var(--accent-subtle)' : 'transparent',
+                color: writing_mode === value ? 'text.primary' : 'text.secondary',
+                cursor: 'pointer',
+                transition: 'all 200ms',
+                '&:hover': {
+                  bgcolor: writing_mode === value ? 'var(--accent-subtle)' : 'action.hover',
+                  color: 'text.primary',
+                },
+              }}
             >
-              <span
-                className="text-lg font-medium"
-                style={{
+              <Typography
+                sx={{
+                  fontSize: '1.125rem',
+                  fontWeight: 500,
                   writingMode: value === "vertical" ? "vertical-rl" : "horizontal-tb",
                 }}
               >
                 {icon}
-              </span>
-              <span className="text-sm">{label}</span>
-            </button>
+              </Typography>
+              <Typography variant="body2">{label}</Typography>
+            </Box>
           ))}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <div>
-        <label className="text-xs font-medium text-[var(--text-secondary)] tracking-wide block mb-2">
+      <Box>
+        <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: '0.04em' }}>
           一行あたりの文字数（初期値）
-        </label>
-        <div className="flex flex-wrap gap-2">
+        </Typography>
+        <Box display="flex" flexWrap="wrap" gap={1}>
           {CHARS_PER_LINE_OPTIONS.map((n) => (
             <Button
               key={n}
@@ -62,11 +77,11 @@ export function LayoutSettings() {
               {n}字
             </Button>
           ))}
-        </div>
-        <p className="text-xs text-[var(--text-tertiary)] mt-2">
+        </Box>
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1 }}>
           エディタで個別に変更することもできます
-        </p>
-      </div>
-    </div>
+        </Typography>
+      </Box>
+    </Box>
   );
 }

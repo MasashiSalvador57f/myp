@@ -1,4 +1,10 @@
 import { useState } from "react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Paper from "@mui/material/Paper";
+import Chip from "@mui/material/Chip";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AddIcon from "@mui/icons-material/Add";
 import { Button, Input, Textarea, Modal } from "../ui";
 import { useSettingsStore } from "../../stores/settingsStore";
 import type { CustomPrompt } from "../../types";
@@ -52,48 +58,51 @@ export function PromptManager() {
   const isOpen = isNew || !!editTarget;
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[var(--text-tertiary)] text-sm">
+    <Box>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+        <Typography variant="body2" color="text.disabled">
           {customPrompts.length === 0
             ? "カスタムプロンプトがありません"
             : `${customPrompts.length}件のプロンプト`}
-        </p>
+        </Typography>
         <Button
           variant="primary"
           size="sm"
           onClick={openNew}
-          icon={
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          }
+          icon={<AddIcon sx={{ fontSize: 14 }} />}
         >
           追加
         </Button>
-      </div>
+      </Box>
 
-      <div className="space-y-2">
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {customPrompts.map((prompt) => (
-          <div
+          <Paper
             key={prompt.id}
-            className="flex items-start gap-3 bg-[var(--bg-tertiary)] rounded-[var(--radius-lg)] p-3"
+            variant="outlined"
+            sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, p: 1.5, borderRadius: 'var(--radius-lg)' }}
           >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[var(--text-primary)] text-sm font-medium truncate">
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                <Typography variant="body2" fontWeight={500} color="text.primary" noWrap>
                   {prompt.name}
-                </span>
-                <span className="text-[var(--text-tertiary)] text-[10px] bg-[var(--bg-elevated)] px-1.5 py-0.5 rounded shrink-0">
-                  {prompt.scope === "global" ? "グローバル" : "プロジェクト"}
-                </span>
-              </div>
-              <p className="text-[var(--text-tertiary)] text-xs line-clamp-2">
+                </Typography>
+                <Chip
+                  label={prompt.scope === "global" ? "グローバル" : "プロジェクト"}
+                  size="small"
+                  sx={{ fontSize: '0.625rem', height: 20 }}
+                />
+              </Box>
+              <Typography variant="caption" color="text.disabled" sx={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}>
                 {prompt.content}
-              </p>
-            </div>
-            <div className="flex gap-1 shrink-0">
+              </Typography>
+            </Box>
+            <Box display="flex" gap={0.5} sx={{ flexShrink: 0 }}>
               <Button variant="ghost" size="sm" onClick={() => openEdit(prompt)}>
                 編集
               </Button>
@@ -101,16 +110,12 @@ export function PromptManager() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setDeleteTarget(prompt)}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[var(--error)]">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14H6L5 6" />
-                </svg>
-              </Button>
-            </div>
-          </div>
+                icon={<DeleteOutlineIcon sx={{ fontSize: 14, color: 'error.main' }} />}
+              />
+            </Box>
+          </Paper>
         ))}
-      </div>
+      </Box>
 
       {/* 編集/作成モーダル */}
       <Modal
@@ -141,7 +146,7 @@ export function PromptManager() {
           </>
         }
       >
-        <div className="space-y-4">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Input
             label="プロンプト名"
             placeholder="例: 文章校正"
@@ -154,13 +159,13 @@ export function PromptManager() {
             placeholder="例: 文章を校正して、誤字・脱字や表現の改善点を指摘してください。"
             value={form.content}
             onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-            className="min-h-[120px]"
+            rows={5}
           />
-          <div>
-            <label className="text-xs font-medium text-[var(--text-secondary)] tracking-wide block mb-2">
+          <Box>
+            <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: '0.04em' }}>
               スコープ
-            </label>
-            <div className="flex gap-2">
+            </Typography>
+            <Box display="flex" gap={1}>
               {(["global", "project"] as const).map((scope) => (
                 <Button
                   key={scope}
@@ -171,9 +176,9 @@ export function PromptManager() {
                   {scope === "global" ? "グローバル" : "プロジェクト"}
                 </Button>
               ))}
-            </div>
-          </div>
-        </div>
+            </Box>
+          </Box>
+        </Box>
       </Modal>
 
       {/* 削除確認モーダル */}
@@ -192,10 +197,10 @@ export function PromptManager() {
           </>
         }
       >
-        <p className="text-[var(--text-secondary)]">
+        <Typography variant="body2" color="text.secondary">
           「{deleteTarget?.name}」を削除しますか？
-        </p>
+        </Typography>
       </Modal>
-    </div>
+    </Box>
   );
 }

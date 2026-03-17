@@ -1,4 +1,13 @@
 import { useState } from "react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemText from "@mui/material/ListItemText";
+import IconButton from "@mui/material/IconButton";
+import CheckIcon from "@mui/icons-material/Check";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { Input, Button } from "../ui";
 import { useSettingsStore } from "../../stores/settingsStore";
 
@@ -21,8 +30,8 @@ export function AISettings() {
   };
 
   return (
-    <div className="space-y-5">
-      <div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+      <Box>
         <Input
           label="APIキー"
           type={showKey ? "text" : "password"}
@@ -31,69 +40,61 @@ export function AISettings() {
           placeholder="sk-ant-..."
           hint="Anthropic Console から取得できます"
           iconRight={
-            <button
+            <IconButton
               onClick={() => setShowKey((v) => !v)}
-              className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-              type="button"
+              edge="end"
+              size="small"
               aria-label={showKey ? "パスワードを隠す" : "パスワードを表示"}
             >
-              {showKey ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              )}
-            </button>
+              {showKey ? <VisibilityOffIcon sx={{ fontSize: 16 }} /> : <VisibilityIcon sx={{ fontSize: 16 }} />}
+            </IconButton>
           }
         />
-      </div>
+      </Box>
 
-      <div>
-        <label className="text-xs font-medium text-[var(--text-secondary)] tracking-wide block mb-2">
+      <Box>
+        <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ display: 'block', mb: 1, letterSpacing: '0.04em' }}>
           モデル
-        </label>
-        <div className="space-y-1.5">
+        </Typography>
+        <List disablePadding>
           {AI_MODELS.map((m) => (
-            <button
+            <ListItemButton
               key={m.value}
-              className={[
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-lg)] text-left border transition-colors",
-                model === m.value
-                  ? "bg-[var(--accent-subtle)] border-[var(--accent-primary)] text-[var(--text-primary)]"
-                  : "border-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
-              ].join(" ")}
+              selected={model === m.value}
               onClick={() => updateAiSettings({ model: m.value })}
+              sx={{
+                borderRadius: 'var(--radius-lg)',
+                mb: 0.5,
+                py: 1.25,
+                px: 1.5,
+                border: '1px solid',
+                borderColor: model === m.value ? 'primary.main' : 'transparent',
+                bgcolor: model === m.value ? 'var(--accent-subtle)' : 'transparent',
+                '&.Mui-selected': {
+                  bgcolor: 'var(--accent-subtle)',
+                },
+                '&.Mui-selected:hover': {
+                  bgcolor: 'var(--accent-subtle)',
+                },
+              }}
             >
-              <span className="flex-1 text-sm">{m.label}</span>
+              <ListItemText
+                primary={m.label}
+                primaryTypographyProps={{ fontSize: '0.875rem' }}
+              />
               {model === m.value && (
-                <svg
-                  className="text-[var(--accent-primary)]"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <CheckIcon sx={{ fontSize: 16, color: 'primary.main' }} />
               )}
-            </button>
+            </ListItemButton>
           ))}
-        </div>
-      </div>
+        </List>
+      </Box>
 
-      <div className="flex items-center gap-3">
+      <Box display="flex" alignItems="center" gap={1.5}>
         <Button variant="primary" onClick={handleSave}>
           {saved ? "保存しました" : "設定を保存"}
         </Button>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

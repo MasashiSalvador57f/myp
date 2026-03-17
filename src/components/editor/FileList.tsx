@@ -1,4 +1,9 @@
 import { useCallback, useState } from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import AddIcon from '@mui/icons-material/Add';
 import type { ManuscriptFile } from '@/types';
 import { useEditorStore } from '@/stores/editorStore';
 import { SidebarItem } from '@/components/ui';
@@ -39,31 +44,40 @@ export function FileList({ onFileSelect, onCreateFile, onRenameFile }: FileListP
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Header */}
-      <div className="flex items-center justify-between h-12 px-4 border-b border-b-[var(--border-subtle)] shrink-0">
-        <span className="text-sm font-medium text-[var(--text-primary)]">
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        height: 48,
+        px: 2,
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        flexShrink: 0,
+      }}>
+        <Typography variant="body1" fontWeight={500} color="text.primary">
           原稿一覧
-        </span>
-        <button
+        </Typography>
+        <IconButton
+          size="small"
           onClick={() => setIsCreating(true)}
-          className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
           title="新規ファイル"
+          sx={{ color: 'text.disabled' }}
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-            <line x1="8" y1="3" x2="8" y2="13" />
-            <line x1="3" y1="8" x2="13" y2="8" />
-          </svg>
-        </button>
-      </div>
+          <AddIcon fontSize="small" />
+        </IconButton>
+      </Box>
 
       {/* File list */}
-      <nav className="flex-1 overflow-y-auto scrollbar-on-hover py-2">
+      <Box component="nav" sx={{ flex: 1, overflowY: 'auto', py: 1 }} className="scrollbar-on-hover">
         {/* New file input */}
         {isCreating && (
-          <div className="px-3 py-1">
-            <input
+          <Box sx={{ px: 1.5, py: 0.5 }}>
+            <TextField
               autoFocus
+              fullWidth
+              size="small"
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
               onKeyDown={(e) => {
@@ -78,28 +92,34 @@ export function FileList({ onFileSelect, onCreateFile, onRenameFile }: FileListP
                 else setIsCreating(false);
               }}
               placeholder="ファイル名.txt"
-              className={[
-                'w-full h-7 px-2 text-xs rounded-[var(--radius-md)]',
-                'bg-[var(--bg-tertiary)] border border-[var(--border-focus)]',
-                'text-[var(--text-primary)]',
-                'outline-none',
-              ].join(' ')}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  height: 28,
+                  fontSize: '0.75rem',
+                },
+                '& .MuiOutlinedInput-input': {
+                  px: 1,
+                  py: 0.5,
+                },
+              }}
             />
-          </div>
+          </Box>
         )}
 
         {files.length === 0 && !isCreating && (
-          <p className="px-4 py-3 text-xs text-[var(--text-tertiary)]">
+          <Typography variant="caption" color="text.disabled" sx={{ display: 'block', px: 2, py: 1.5 }}>
             原稿ファイルがありません
-          </p>
+          </Typography>
         )}
 
         {files.map((file) => (
-          <div key={file.filename} className="group">
+          <Box key={file.filename}>
             {renamingFile === file.filename ? (
-              <div className="px-3 py-1">
-                <input
+              <Box sx={{ px: 1.5, py: 0.5 }}>
+                <TextField
                   autoFocus
+                  fullWidth
+                  size="small"
                   value={renameValue}
                   onChange={(e) => setRenameValue(e.target.value)}
                   onKeyDown={(e) => {
@@ -110,14 +130,18 @@ export function FileList({ onFileSelect, onCreateFile, onRenameFile }: FileListP
                     }
                   }}
                   onBlur={() => handleRename(file)}
-                  className={[
-                    'w-full h-7 px-2 text-xs rounded-[var(--radius-md)]',
-                    'bg-[var(--bg-tertiary)] border border-[var(--border-focus)]',
-                    'text-[var(--text-primary)]',
-                    'outline-none',
-                  ].join(' ')}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: 28,
+                      fontSize: '0.75rem',
+                    },
+                    '& .MuiOutlinedInput-input': {
+                      px: 1,
+                      py: 0.5,
+                    },
+                  }}
                 />
-              </div>
+              </Box>
             ) : (
               <SidebarItem
                 active={currentFile?.filename === file.filename}
@@ -127,7 +151,7 @@ export function FileList({ onFileSelect, onCreateFile, onRenameFile }: FileListP
                   setRenameValue(file.filename);
                 }}
                 trailing={
-                  <span className="text-[0.625rem]">
+                  <span style={{ fontSize: '0.625rem' }}>
                     {file.char_count.toLocaleString()}字
                   </span>
                 }
@@ -135,9 +159,9 @@ export function FileList({ onFileSelect, onCreateFile, onRenameFile }: FileListP
                 {file.filename}
               </SidebarItem>
             )}
-          </div>
+          </Box>
         ))}
-      </nav>
-    </div>
+      </Box>
+    </Box>
   );
 }

@@ -11,6 +11,12 @@ pub struct EditorSettings {
     pub writing_mode: String,  // "vertical" | "horizontal"
     pub chars_per_line: u32,
     pub theme: String,         // "dark" | "light"
+    #[serde(default = "default_color_preset")]
+    pub color_preset: String,  // "default" | "ocean" | "forest" | "sakura" | "twilight" | "minimal"
+}
+
+fn default_color_preset() -> String {
+    "default".into()
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -46,6 +52,7 @@ impl Default for EditorSettings {
             writing_mode: "vertical".into(),
             chars_per_line: 40,
             theme: "dark".into(),
+            color_preset: "default".into(),
         }
     }
 }

@@ -1,15 +1,24 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import AppBar from "@mui/material/AppBar";
+import MuiToolbar from "@mui/material/Toolbar";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { FontSettings } from "../components/settings/FontSettings";
 import { LayoutSettings } from "../components/settings/LayoutSettings";
 import { AISettings } from "../components/settings/AISettings";
 import { PromptManager } from "../components/settings/PromptManager";
 import { StorageSettings } from "../components/settings/StorageSettings";
+import { ThemeSettings } from "../components/settings/ThemeSettings";
 import { useSettingsStore } from "../stores/settingsStore";
 
-type SettingsTab = "font" | "layout" | "storage" | "ai" | "prompts";
+type SettingsTab = "theme" | "font" | "layout" | "storage" | "ai" | "prompts";
 
 const TABS: { id: SettingsTab; label: string }[] = [
+  { id: "theme", label: "テーマ" },
   { id: "font", label: "フォント" },
   { id: "layout", label: "レイアウト" },
   { id: "storage", label: "保存先" },
@@ -19,94 +28,116 @@ const TABS: { id: SettingsTab; label: string }[] = [
 
 export default function SettingsPage() {
   const { loadSettings } = useSettingsStore();
-  const [activeTab, setActiveTab] = useState<SettingsTab>("font");
+  const [activeTab, setActiveTab] = useState<SettingsTab>("theme");
 
   useEffect(() => {
     loadSettings();
   }, []);
 
+  const tabIndex = TABS.findIndex((t) => t.id === activeTab);
+
   return (
-    <div className="h-screen flex flex-col bg-[var(--bg-primary)] overflow-hidden">
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'var(--bg-primary)', overflow: 'hidden' }}>
       {/* ヘッダー */}
-      <header className="flex items-center gap-4 px-6 py-3 border-b border-[var(--border-subtle)] shrink-0">
-        <Link
-          to="/"
-          className="flex items-center gap-1.5 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors text-sm"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          ホーム
-        </Link>
-        <h1 className="text-[var(--text-primary)] font-semibold text-base">設定</h1>
-      </header>
+      <AppBar position="static" color="default" elevation={0} sx={{ bgcolor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
+        <MuiToolbar variant="dense" sx={{ minHeight: '48px !important', px: 3, gap: 2 }}>
+          <Link
+            to="/"
+            style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+          >
+            <ArrowBackIosNewIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+            <Typography variant="body2" color="text.disabled">ホーム</Typography>
+          </Link>
+          <Typography variant="h3" sx={{ fontWeight: 600, fontSize: '1rem', color: 'text.primary' }}>
+            設定
+          </Typography>
+        </MuiToolbar>
+      </AppBar>
 
       {/* タブ + コンテンツ */}
-      <div className="flex flex-1 overflow-hidden">
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* サイドバー（タブ） */}
-        <nav className="w-48 border-r border-[var(--border-subtle)] bg-[var(--bg-secondary)] shrink-0 py-3">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              className={[
-                "w-full text-left px-4 py-2.5 text-sm transition-colors",
-                activeTab === tab.id
-                  ? "text-[var(--text-primary)] bg-[var(--bg-hover)] font-medium border-r-2 border-[var(--accent-primary)]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]",
-              ].join(" ")}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+        <Box sx={{ width: 192, borderRight: '1px solid', borderColor: 'divider', bgcolor: 'var(--bg-secondary)', flexShrink: 0 }}>
+          <Tabs
+            orientation="vertical"
+            value={tabIndex}
+            onChange={(_e, newValue: number) => setActiveTab(TABS[newValue].id)}
+            sx={{
+              pt: 1.5,
+              '& .MuiTab-root': {
+                alignItems: 'flex-start',
+                textAlign: 'left',
+                pl: 2,
+                minHeight: 40,
+                fontSize: '0.875rem',
+              },
+              '& .MuiTabs-indicator': {
+                left: 'auto',
+                right: 0,
+                width: 2,
+              },
+            }}
+          >
+            {TABS.map((tab) => (
+              <Tab key={tab.id} label={tab.label} />
+            ))}
+          </Tabs>
+        </Box>
 
         {/* コンテンツ */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-xl">
+        <Box component="main" sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+          <Box sx={{ maxWidth: 560 }}>
+            {activeTab === "theme" && (
+              <section>
+                <Typography variant="h3" fontWeight={500} color="text.primary" mb={2.5}>
+                  テーマ設定
+                </Typography>
+                <ThemeSettings />
+              </section>
+            )}
             {activeTab === "font" && (
               <section>
-                <h2 className="text-[var(--text-primary)] font-medium text-base mb-5">
+                <Typography variant="h3" fontWeight={500} color="text.primary" mb={2.5}>
                   フォント設定
-                </h2>
+                </Typography>
                 <FontSettings />
               </section>
             )}
             {activeTab === "layout" && (
               <section>
-                <h2 className="text-[var(--text-primary)] font-medium text-base mb-5">
+                <Typography variant="h3" fontWeight={500} color="text.primary" mb={2.5}>
                   レイアウト設定
-                </h2>
+                </Typography>
                 <LayoutSettings />
               </section>
             )}
             {activeTab === "storage" && (
               <section>
-                <h2 className="text-[var(--text-primary)] font-medium text-base mb-5">
+                <Typography variant="h3" fontWeight={500} color="text.primary" mb={2.5}>
                   保存先設定
-                </h2>
+                </Typography>
                 <StorageSettings />
               </section>
             )}
             {activeTab === "ai" && (
               <section>
-                <h2 className="text-[var(--text-primary)] font-medium text-base mb-5">
+                <Typography variant="h3" fontWeight={500} color="text.primary" mb={2.5}>
                   AI設定
-                </h2>
+                </Typography>
                 <AISettings />
               </section>
             )}
             {activeTab === "prompts" && (
               <section>
-                <h2 className="text-[var(--text-primary)] font-medium text-base mb-5">
+                <Typography variant="h3" fontWeight={500} color="text.primary" mb={2.5}>
                   カスタムプロンプト管理
-                </h2>
+                </Typography>
                 <PromptManager />
               </section>
             )}
-          </div>
-        </main>
-      </div>
-    </div>
+          </Box>
+        </Box>
+      </Box>
+    </Box>
   );
 }

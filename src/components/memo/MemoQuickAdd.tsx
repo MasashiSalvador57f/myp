@@ -1,4 +1,8 @@
 import { useState } from "react";
+import Paper from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
 import { Button } from "../ui";
 import * as commands from "../../lib/tauri-commands";
 
@@ -34,27 +38,36 @@ export function MemoQuickAdd({ onCreated }: MemoQuickAddProps) {
   };
 
   return (
-    <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-4">
-      <input
-        type="text"
+    <Paper variant="outlined" sx={{ p: 2 }}>
+      <TextField
+        fullWidth
+        variant="standard"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="メモのタイトル"
-        className="w-full bg-transparent text-[var(--text-primary)] text-sm font-medium placeholder:text-[var(--text-tertiary)] outline-none mb-2"
+        slotProps={{
+          input: {
+            disableUnderline: true,
+            sx: { fontWeight: 500, fontSize: '0.875rem', mb: 1 },
+          },
+        }}
       />
-      <textarea
+      <TextField
+        fullWidth
+        variant="outlined"
+        size="small"
         value={body}
         onChange={(e) => setBody(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="アイデアを書き留める..."
+        multiline
         rows={3}
-        className="w-full bg-[var(--bg-tertiary)] border border-[var(--border-default)] rounded-[var(--radius-lg)] px-3 py-2 text-[var(--text-primary)] text-sm placeholder:text-[var(--text-tertiary)] outline-none resize-none"
       />
-      <div className="flex justify-between items-center mt-2">
-        <span className="text-xs text-[var(--text-tertiary)]">
+      <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
+        <Typography variant="caption" color="text.disabled">
           Cmd+Enter で送信
-        </span>
+        </Typography>
         <Button
           variant="primary"
           size="sm"
@@ -63,7 +76,7 @@ export function MemoQuickAdd({ onCreated }: MemoQuickAddProps) {
         >
           {saving ? "保存中..." : "メモを追加"}
         </Button>
-      </div>
-    </div>
+      </Box>
+    </Paper>
   );
 }

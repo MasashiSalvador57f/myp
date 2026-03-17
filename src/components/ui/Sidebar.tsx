@@ -1,4 +1,9 @@
 import { type ReactNode, type HTMLAttributes } from 'react';
+import Box from '@mui/material/Box';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import Typography from '@mui/material/Typography';
 
 interface SidebarProps extends HTMLAttributes<HTMLElement> {
   /** Width when expanded (CSS value) */
@@ -23,38 +28,63 @@ export function Sidebar({
   className = '',
   ...props
 }: SidebarProps) {
-  const borderClass = side === 'left'
-    ? 'border-r border-r-[var(--border-subtle)]'
-    : 'border-l border-l-[var(--border-subtle)]';
+  const borderSx = side === 'left'
+    ? { borderRight: '1px solid', borderColor: 'divider' }
+    : { borderLeft: '1px solid', borderColor: 'divider' };
 
   return (
-    <aside
-      className={[
-        'flex flex-col bg-[var(--bg-secondary)] h-full shrink-0 overflow-hidden',
-        'transition-[width] duration-[var(--duration-slow)] ease-[var(--ease-default)]',
-        borderClass,
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      style={{ width: collapsed ? '0px' : width }}
+    <Box
+      component="aside"
+      className={className}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--bg-secondary)',
+        height: '100%',
+        flexShrink: 0,
+        overflow: 'hidden',
+        transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+        width: collapsed ? '0px' : width,
+        ...borderSx,
+      }}
       aria-hidden={collapsed}
       {...props}
     >
       {header && (
-        <div className="flex items-center h-12 px-4 border-b border-b-[var(--border-subtle)] shrink-0">
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            height: 48,
+            px: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            flexShrink: 0,
+          }}
+        >
           {header}
-        </div>
+        </Box>
       )}
-      <nav className="flex-1 overflow-y-auto scrollbar-on-hover py-2">
+      <Box
+        component="nav"
+        sx={{ flex: 1, overflowY: 'auto', py: 1 }}
+        className="scrollbar-on-hover"
+      >
         {children}
-      </nav>
+      </Box>
       {footer && (
-        <div className="border-t border-t-[var(--border-subtle)] p-3 shrink-0">
+        <Box
+          sx={{
+            borderTop: '1px solid',
+            borderColor: 'divider',
+            p: 1.5,
+            flexShrink: 0,
+          }}
+        >
           {footer}
-        </div>
+        </Box>
       )}
-    </aside>
+    </Box>
   );
 }
 
@@ -76,24 +106,42 @@ export function SidebarItem({
   ...props
 }: SidebarItemProps) {
   return (
-    <button
-      className={[
-        'flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left rounded-[var(--radius-md)] mx-1',
-        'transition-colors duration-[var(--duration-fast)] ease-[var(--ease-default)]',
-        active
-          ? 'bg-[var(--bg-active)] text-[var(--text-primary)] font-medium'
-          : 'text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      {...props}
+    <ListItemButton
+      selected={active}
+      className={className}
+      sx={{
+        mx: 0.5,
+        borderRadius: 'var(--radius-md)',
+        py: 0.75,
+        px: 1.5,
+        minHeight: 'auto',
+        '&.Mui-selected': {
+          backgroundColor: 'var(--bg-active)',
+        },
+        '&.Mui-selected:hover': {
+          backgroundColor: 'var(--bg-active)',
+        },
+      }}
+      {...(props as React.ComponentPropsWithoutRef<typeof ListItemButton>)}
     >
-      {icon && <span className="shrink-0 w-4 h-4">{icon}</span>}
-      <span className="flex-1 truncate">{children}</span>
-      {trailing && (
-        <span className="shrink-0 text-xs text-[var(--text-tertiary)]">{trailing}</span>
+      {icon && (
+        <ListItemIcon sx={{ minWidth: 28, '& > *': { width: 16, height: 16 } }}>
+          {icon}
+        </ListItemIcon>
       )}
-    </button>
+      <ListItemText
+        primary={children}
+        primaryTypographyProps={{
+          noWrap: true,
+          fontSize: '0.875rem',
+          fontWeight: active ? 500 : 400,
+        }}
+      />
+      {trailing && (
+        <Typography variant="caption" color="text.disabled" sx={{ flexShrink: 0 }}>
+          {trailing}
+        </Typography>
+      )}
+    </ListItemButton>
   );
 }

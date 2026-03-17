@@ -1,3 +1,7 @@
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import LinearProgress from "@mui/material/LinearProgress";
+
 interface ProgressBarProps {
   current: number;
   target: number | null;
@@ -6,15 +10,15 @@ interface ProgressBarProps {
 export function ProgressBar({ current, target }: ProgressBarProps) {
   if (!target || target === 0) {
     return (
-      <div className="space-y-1">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[var(--text-secondary)]">現在の文字数</span>
-          <span className="text-[var(--text-primary)] font-medium">
+      <Box>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Typography variant="body2" color="text.secondary">現在の文字数</Typography>
+          <Typography variant="body2" fontWeight={500} color="text.primary">
             {current.toLocaleString()}字
-          </span>
-        </div>
-        <p className="text-[var(--text-tertiary)] text-xs">目標未設定</p>
-      </div>
+          </Typography>
+        </Box>
+        <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5 }}>目標未設定</Typography>
+      </Box>
     );
   }
 
@@ -22,33 +26,43 @@ export function ProgressBar({ current, target }: ProgressBarProps) {
   const remaining = Math.max(0, target - current);
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-[var(--text-secondary)]">執筆進捗</span>
-        <span className="text-[var(--text-primary)] font-medium">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Typography variant="body2" color="text.secondary">執筆進捗</Typography>
+        <Typography variant="body2" fontWeight={500} color="text.primary">
           {current.toLocaleString()}
-          <span className="text-[var(--text-tertiary)] font-normal">
+          <Typography component="span" variant="body2" color="text.disabled" fontWeight={400}>
             {" "}/ {target.toLocaleString()}字
-          </span>
-        </span>
-      </div>
-      <div className="bg-[var(--bg-tertiary)] rounded-full h-2.5 overflow-hidden">
-        <div
-          className="h-full rounded-full bg-[var(--accent-primary)] transition-all duration-[var(--duration-slow)]"
-          style={{ width: `${pct}%` }}
-          role="progressbar"
-          aria-valuenow={current}
-          aria-valuemin={0}
-          aria-valuemax={target}
-        />
-      </div>
-      <div className="flex items-center justify-between text-xs text-[var(--text-tertiary)]">
-        <span>{pct}% 達成</span>
-        {remaining > 0 && <span>残り {remaining.toLocaleString()}字</span>}
-        {remaining === 0 && (
-          <span className="text-[var(--success)]">目標達成！</span>
+          </Typography>
+        </Typography>
+      </Box>
+      <LinearProgress
+        variant="determinate"
+        value={pct}
+        sx={{
+          height: 10,
+          borderRadius: 'var(--radius-lg)',
+          bgcolor: 'var(--bg-tertiary)',
+          '& .MuiLinearProgress-bar': {
+            bgcolor: 'primary.main',
+            borderRadius: 'var(--radius-lg)',
+            transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+          },
+        }}
+        role="progressbar"
+        aria-valuenow={current}
+        aria-valuemin={0}
+        aria-valuemax={target}
+      />
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Typography variant="caption" color="text.disabled">{pct}% 達成</Typography>
+        {remaining > 0 && (
+          <Typography variant="caption" color="text.disabled">残り {remaining.toLocaleString()}字</Typography>
         )}
-      </div>
-    </div>
+        {remaining === 0 && (
+          <Typography variant="caption" color="success.main">目標達成！</Typography>
+        )}
+      </Box>
+    </Box>
   );
 }

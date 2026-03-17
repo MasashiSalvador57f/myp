@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { Button, Input, Modal } from "../ui";
 import type { ProjectConfig } from "../../types";
 
@@ -50,30 +55,34 @@ export function ProjectHeader({
 
   return (
     <>
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
+      <Box display="flex" alignItems="flex-start" justifyContent="space-between" gap={2}>
+        <Box sx={{ minWidth: 0 }}>
           <Link
             to="/"
-            className="text-[var(--text-tertiary)] text-sm hover:text-[var(--text-secondary)] flex items-center gap-1 mb-2"
+            style={{
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              marginBottom: 8,
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            ホーム
+            <ArrowBackIosNewIcon sx={{ fontSize: 14, color: 'text.disabled' }} />
+            <Typography variant="body2" color="text.disabled">ホーム</Typography>
           </Link>
-          <h1 className="text-[var(--text-primary)] text-2xl font-semibold truncate">
+          <Typography variant="h1" sx={{ fontSize: '1.5rem', fontWeight: 600, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {config.name}
-          </h1>
-          <p className="text-[var(--text-tertiary)] text-sm mt-1">
+          </Typography>
+          <Typography variant="body2" color="text.disabled" mt={0.5}>
             作成:{" "}
             {new Date(config.created_at).toLocaleDateString("ja-JP", {
               year: "numeric",
               month: "long",
               day: "numeric",
             })}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+          </Typography>
+        </Box>
+        <Box display="flex" alignItems="center" gap={1} sx={{ flexShrink: 0 }}>
           <Button
             variant="ghost"
             size="sm"
@@ -82,12 +91,7 @@ export function ProjectHeader({
               setEditTarget(config.target_char_count?.toString() ?? "");
               setEditOpen(true);
             }}
-            icon={
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-            }
+            icon={<EditIcon sx={{ fontSize: 16 }} />}
           >
             設定
           </Button>
@@ -95,19 +99,12 @@ export function ProjectHeader({
             variant="danger"
             size="sm"
             onClick={() => setDeleteOpen(true)}
-            icon={
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v6M14 11v6" />
-                <path d="M9 6V4h6v2" />
-              </svg>
-            }
+            icon={<DeleteOutlineIcon sx={{ fontSize: 16 }} />}
           >
             削除
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {/* 編集モーダル */}
       <Modal
@@ -125,7 +122,7 @@ export function ProjectHeader({
           </>
         }
       >
-        <div className="space-y-4">
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <Input
             label="プロジェクト名"
             value={editName}
@@ -139,7 +136,7 @@ export function ProjectHeader({
             onChange={(e) => setEditTarget(e.target.value)}
             hint="空欄にすると目標なし"
           />
-        </div>
+        </Box>
       </Modal>
 
       {/* 削除確認モーダル */}
@@ -158,9 +155,9 @@ export function ProjectHeader({
           </>
         }
       >
-        <p className="text-[var(--text-secondary)]">
+        <Typography variant="body2" color="text.secondary">
           「{config.name}」を削除しますか？この操作は元に戻せません。
-        </p>
+        </Typography>
       </Modal>
     </>
   );

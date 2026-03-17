@@ -1,4 +1,6 @@
 import { type HTMLAttributes, type ReactNode } from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 interface PanelProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   /** Panel header title */
@@ -20,34 +22,48 @@ export function Panel({
   className = '',
   ...props
 }: PanelProps) {
-  const borderClass = {
-    left: 'border-l border-l-[var(--border-subtle)]',
-    right: 'border-r border-r-[var(--border-subtle)]',
-    none: '',
+  const borderSx = {
+    left: { borderLeft: '1px solid', borderColor: 'divider' },
+    right: { borderRight: '1px solid', borderColor: 'divider' },
+    none: {},
   }[borderEdge];
 
   return (
-    <div
-      className={[
-        'flex flex-col bg-[var(--bg-secondary)] h-full',
-        borderClass,
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
+    <Box
+      className={className}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: 'var(--bg-secondary)',
+        height: '100%',
+        ...borderSx,
+      }}
       {...props}
     >
       {showHeader && (title || headerAction) && (
-        <div className="flex items-center justify-between h-12 px-4 border-b border-b-[var(--border-subtle)] shrink-0">
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            height: 48,
+            px: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            flexShrink: 0,
+          }}
+        >
           {title && (
-            <span className="text-sm font-medium text-[var(--text-primary)] truncate">
+            <Typography variant="body1" fontWeight={500} color="text.primary" noWrap>
               {title}
-            </span>
+            </Typography>
           )}
           {headerAction}
-        </div>
+        </Box>
       )}
-      <div className="flex-1 overflow-y-auto scrollbar-on-hover">{children}</div>
-    </div>
+      <Box sx={{ flex: 1, overflowY: 'auto' }} className="scrollbar-on-hover">
+        {children}
+      </Box>
+    </Box>
   );
 }

@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Card } from "../ui";
+import MuiCard from "@mui/material/Card";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import LinearProgress from "@mui/material/LinearProgress";
 import type { ProjectSummary } from "../../types";
 
 interface ProjectCardProps {
@@ -20,40 +23,73 @@ export function ProjectCard({ project }: ProjectCardProps) {
   });
 
   return (
-    <Card
-      interactive
+    <MuiCard
+      variant="outlined"
       onClick={() => navigate(`/project/${project.id}`)}
-      className="flex flex-col gap-3"
+      sx={{
+        p: 2.5,
+        cursor: 'pointer',
+        transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 1.5,
+        '&:hover': {
+          boxShadow: 'var(--shadow-sm)',
+          borderColor: 'var(--border-default)',
+        },
+      }}
     >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-[var(--text-primary)] font-medium text-sm leading-snug line-clamp-2">
+      <Box display="flex" alignItems="flex-start" justifyContent="space-between" gap={1}>
+        <Typography
+          variant="body1"
+          fontWeight={500}
+          color="text.primary"
+          sx={{
+            lineHeight: 1.4,
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+          }}
+        >
           {project.name}
-        </h3>
-        <span className="text-[var(--text-tertiary)] text-xs shrink-0">{updatedDate}</span>
-      </div>
+        </Typography>
+        <Typography variant="caption" color="text.disabled" sx={{ flexShrink: 0 }}>
+          {updatedDate}
+        </Typography>
+      </Box>
 
-      <div className="flex items-center justify-between text-xs text-[var(--text-secondary)]">
-        <span>{project.total_char_count.toLocaleString()}字</span>
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Typography variant="caption" color="text.secondary">
+          {project.total_char_count.toLocaleString()}字
+        </Typography>
         {project.target_char_count && (
-          <span className="text-[var(--text-tertiary)]">
+          <Typography variant="caption" color="text.disabled">
             目標: {project.target_char_count.toLocaleString()}字
-          </span>
+          </Typography>
         )}
-      </div>
+      </Box>
 
       {progress !== null && (
-        <div className="space-y-1">
-          <div className="bg-[var(--bg-tertiary)] rounded-full h-1.5 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-[var(--accent-primary)] transition-all duration-[var(--duration-slow)]"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="text-[var(--text-tertiary)] text-[10px] text-right">
+        <Box>
+          <LinearProgress
+            variant="determinate"
+            value={progress}
+            sx={{
+              height: 6,
+              borderRadius: 'var(--radius-lg)',
+              bgcolor: 'var(--bg-tertiary)',
+              '& .MuiLinearProgress-bar': {
+                bgcolor: 'primary.main',
+                borderRadius: 'var(--radius-lg)',
+              },
+            }}
+          />
+          <Typography variant="caption" color="text.disabled" sx={{ display: 'block', textAlign: 'right', mt: 0.5 }}>
             {Math.round(progress)}%
-          </div>
-        </div>
+          </Typography>
+        </Box>
       )}
-    </Card>
+    </MuiCard>
   );
 }

@@ -1,4 +1,13 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import Card from "@mui/material/Card";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogContent from "@mui/material/DialogContent";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import MuiButton from "@mui/material/Button";
 import type { MemoInfo, MemoDetail } from "../../types/memo";
 import * as commands from "../../lib/tauri-commands";
 
@@ -17,8 +26,6 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [previews, setPreviews] = useState<Record<string, string>>({});
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
 
   // カードに本文プレビューを表示するため、全メモの先頭数行を取得
   useEffect(() => {
@@ -80,170 +87,163 @@ export function MemoList({ memos, loading, onDeleted, onUpdated }: MemoListProps
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      saveAndClose();
-    }
-  };
-
-  // モーダル外クリックで閉じる
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-      saveAndClose();
-    }
-  };
-
-  // bodyの高さを自動調整
-  useEffect(() => {
-    if (bodyRef.current) {
-      bodyRef.current.style.height = "auto";
-      bodyRef.current.style.height = `${Math.max(bodyRef.current.scrollHeight, 120)}px`;
-    }
-  }, [editBody, openFile]);
-
   if (loading) {
     return (
-      <div className="text-[var(--text-tertiary)] text-sm text-center py-4">
+      <Typography variant="body2" color="text.disabled" textAlign="center" py={2}>
         読み込み中...
-      </div>
+      </Typography>
     );
   }
 
   if (memos.length === 0) {
     return (
-      <div className="text-[var(--text-tertiary)] text-sm text-center py-4">
+      <Typography variant="body2" color="text.disabled" textAlign="center" py={2}>
         メモがありません
-      </div>
+      </Typography>
     );
   }
 
   return (
     <>
       {/* カードグリッド */}
-      <div className="columns-2 md:columns-3 lg:columns-4 xl:columns-5 gap-3">
+      <Box sx={{ columnCount: { xs: 2, md: 3, lg: 4, xl: 5 }, columnGap: 1.5 }}>
         {memos.map((memo) => {
           const preview = previews[memo.filename] ?? "";
           return (
-            <div
+            <Card
               key={memo.filename}
+              variant="outlined"
               onClick={() => handleOpen(memo.filename)}
-              className="break-inside-avoid mb-3 bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-3 cursor-pointer hover:border-[var(--border-default)] hover:shadow-sm transition-all group"
+              sx={{
+                breakInside: 'avoid',
+                mb: 1.5,
+                p: 1.5,
+                cursor: 'pointer',
+                transition: 'all 200ms',
+                '&:hover': {
+                  borderColor: 'var(--border-default)',
+                  boxShadow: 'var(--shadow-sm)',
+                },
+                '& .delete-btn': { opacity: 0 },
+                '&:hover .delete-btn': { opacity: 1 },
+              }}
             >
-              {/* タイトル */}
-              <h3 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2 mb-1">
+              <Typography variant="body2" fontWeight={500} color="text.primary" sx={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                mb: 0.5,
+              }}>
                 {memo.title}
-              </h3>
-              {/* 本文プレビュー */}
+              </Typography>
               {preview && (
-                <p className="text-xs text-[var(--text-secondary)] line-clamp-6 whitespace-pre-wrap leading-relaxed">
+                <Typography variant="caption" color="text.secondary" sx={{
+                  display: '-webkit-box',
+                  WebkitLineClamp: 6,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  whiteSpace: 'pre-wrap',
+                  lineHeight: 1.6,
+                }}>
                   {preview}
-                </p>
+                </Typography>
               )}
-              {/* 日時 */}
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-[10px] text-[var(--text-tertiary)]">
+              <Box display="flex" alignItems="center" justifyContent="space-between" mt={1}>
+                <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.625rem' }}>
                   {memo.created_at}
-                </span>
-                {/* ホバーで削除アイコン表示 */}
-                <button
-                  type="button"
+                </Typography>
+                <IconButton
+                  className="delete-btn"
+                  size="small"
                   onClick={(e) => {
                     e.stopPropagation();
                     commands.deleteMemo(memo.filename).then(onDeleted).catch(console.error);
                   }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-[var(--radius-md)] hover:bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
                   title="削除"
+                  sx={{ transition: 'opacity 200ms' }}
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6" />
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+                  <DeleteOutlineIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Box>
+            </Card>
           );
         })}
-      </div>
+      </Box>
 
       {/* 編集モーダル (Google Keep風) */}
-      {openFile && (
-        <div
-          className="fixed inset-0 z-[var(--z-modal)] flex items-center justify-center"
-          onClick={handleOverlayClick}
-        >
-          {/* オーバーレイ */}
-          <div className="absolute inset-0 bg-[var(--bg-primary)]" />
-
-          {/* モーダルカード */}
-          <div
-            ref={modalRef}
-            className="relative w-full max-w-lg mx-4 bg-white dark:bg-[#1e1e1e] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] shadow-lg overflow-hidden"
-          >
-            {detail ? (
-              <div className="p-5 space-y-3">
-                {/* タイトル編集 */}
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => { setEditTitle(e.target.value); setDirty(true); }}
-                  onKeyDown={handleKeyDown}
-                  placeholder="タイトル"
-                  autoFocus
-                  className="w-full bg-transparent text-[var(--text-primary)] text-base font-semibold outline-none placeholder:text-[var(--text-tertiary)] placeholder:opacity-40"
-                />
-                {/* 本文編集 */}
-                <textarea
-                  ref={bodyRef}
-                  value={editBody}
-                  onChange={(e) => { setEditBody(e.target.value); setDirty(true); }}
-                  onKeyDown={handleKeyDown}
-                  placeholder="メモを入力..."
-                  className="w-full bg-transparent text-sm text-[var(--text-secondary)] outline-none resize-none leading-relaxed placeholder:text-[var(--text-tertiary)] placeholder:opacity-40"
-                />
-                {/* フッター */}
-                <div className="flex items-center justify-between pt-2 border-t border-[var(--border-subtle)]">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-[var(--text-tertiary)]">
-                      {detail.created_at}
-                    </span>
-                    {saving && (
-                      <span className="text-[10px] text-[var(--accent-primary)]">保存中...</span>
-                    )}
-                    {dirty && !saving && (
-                      <span className="text-[10px] text-[var(--text-tertiary)]">未保存</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleDelete}
-                      className="p-1.5 rounded-[var(--radius-md)] hover:bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
-                      title="削除"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={saveAndClose}
-                      className="text-xs font-medium text-[var(--text-primary)] px-3 py-1.5 rounded-[var(--radius-md)] hover:bg-[var(--bg-tertiary)] transition-colors"
-                    >
-                      閉じる
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-5 text-[var(--text-tertiary)] text-sm">
-                読み込み中...
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <Dialog
+        open={!!openFile}
+        onClose={saveAndClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 'var(--radius-xl)' },
+        }}
+      >
+        <DialogContent sx={{ p: 2.5 }}>
+          {detail ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <TextField
+                fullWidth
+                variant="standard"
+                value={editTitle}
+                onChange={(e) => { setEditTitle(e.target.value); setDirty(true); }}
+                onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); saveAndClose(); } }}
+                placeholder="タイトル"
+                autoFocus
+                slotProps={{
+                  input: {
+                    disableUnderline: true,
+                    sx: { fontWeight: 600, fontSize: '1rem' },
+                  },
+                }}
+              />
+              <TextField
+                fullWidth
+                variant="standard"
+                value={editBody}
+                onChange={(e) => { setEditBody(e.target.value); setDirty(true); }}
+                onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); saveAndClose(); } }}
+                placeholder="メモを入力..."
+                multiline
+                minRows={4}
+                slotProps={{
+                  input: {
+                    disableUnderline: true,
+                    sx: { fontSize: '0.875rem', lineHeight: 1.6 },
+                  },
+                }}
+              />
+              <Box display="flex" alignItems="center" justifyContent="space-between" pt={1} sx={{ borderTop: '1px solid', borderColor: 'divider' }}>
+                <Box display="flex" alignItems="center" gap={1.5}>
+                  <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.625rem' }}>
+                    {detail.created_at}
+                  </Typography>
+                  {saving && (
+                    <Typography variant="caption" color="primary.main" sx={{ fontSize: '0.625rem' }}>保存中...</Typography>
+                  )}
+                  {dirty && !saving && (
+                    <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.625rem' }}>未保存</Typography>
+                  )}
+                </Box>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <IconButton size="small" onClick={handleDelete} title="削除">
+                    <DeleteOutlineIcon sx={{ fontSize: 16 }} />
+                  </IconButton>
+                  <MuiButton size="small" onClick={saveAndClose} sx={{ textTransform: 'none', fontSize: '0.75rem' }}>
+                    閉じる
+                  </MuiButton>
+                </Box>
+              </Box>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.disabled">
+              読み込み中...
+            </Typography>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

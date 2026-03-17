@@ -1,5 +1,10 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import ViewSidebarIcon from '@mui/icons-material/ViewSidebar';
+import ViewSidebarOutlinedIcon from '@mui/icons-material/ViewSidebarOutlined';
 import { useEditorStore } from '@/stores/editorStore';
 import { useWritingLogStore } from '@/stores/writingLogStore';
 import { Editor } from '@/components/editor/Editor';
@@ -139,44 +144,46 @@ export default function EditorPage() {
   return (
     <EditorLayout
       toolbar={
-        <div className="flex flex-col">
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           {/* Navigation bar */}
-          <div className="flex items-center h-10 px-3 bg-[var(--bg-secondary)] border-b border-b-[var(--border-subtle)] gap-2">
-            <Link to={`/project/${projectId}`}>
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            height: 40,
+            px: 1.5,
+            bgcolor: 'var(--bg-secondary)',
+            borderBottom: '1px solid var(--border-subtle)',
+            gap: 1,
+          }}>
+            <Link to={`/project/${projectId}`} style={{ textDecoration: 'none' }}>
               <Button variant="ghost" size="sm">
                 ← 戻る
               </Button>
             </Link>
-            <span className="text-xs text-[var(--text-tertiary)]">
+            <Typography variant="caption" color="text.disabled">
               {currentFile?.filename ?? 'ファイル未選択'}
-            </span>
-            <div className="flex-1" />
-            <Button
-              variant="ghost"
-              size="sm"
+            </Typography>
+            <Box sx={{ flex: 1 }} />
+            <IconButton
+              size="small"
               onClick={toggleLeftSidebar}
               title="原稿一覧 (⌘B)"
+              sx={{ color: 'text.secondary' }}
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="1" y="2" width="12" height="10" rx="1" />
-                <line x1="5" y1="2" x2="5" y2="12" />
-              </svg>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
+              <ViewSidebarIcon fontSize="small" sx={{ transform: 'scaleX(-1)' }} />
+            </IconButton>
+            <IconButton
+              size="small"
               onClick={toggleRightSidebar}
               title="AI相談 (⌘J)"
+              sx={{ color: 'text.secondary' }}
             >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="1" y="2" width="12" height="10" rx="1" />
-                <line x1="9" y1="2" x2="9" y2="12" />
-              </svg>
-            </Button>
-          </div>
+              <ViewSidebarOutlinedIcon fontSize="small" />
+            </IconButton>
+          </Box>
           {/* Editor toolbar */}
           <EditorToolbar />
-        </div>
+        </Box>
       }
       leftSidebar={
         <FileList

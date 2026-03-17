@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
+import CloseIcon from "@mui/icons-material/Close";
+import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { Button } from "../components/ui";
 import { ProjectHeader } from "../components/project/ProjectHeader";
 import { ChapterList } from "../components/project/ChapterList";
@@ -49,33 +55,33 @@ export default function ProjectPage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[var(--bg-primary)]">
-        <p className="text-[var(--text-tertiary)] text-sm">読み込み中...</p>
-      </div>
+      <Box sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'var(--bg-primary)' }}>
+        <Typography variant="body2" color="text.disabled">読み込み中...</Typography>
+      </Box>
     );
   }
 
   if (error || !currentProject) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-[var(--bg-primary)] gap-4">
-        <p className="text-[var(--text-secondary)] text-sm">
+      <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: 'var(--bg-primary)', gap: 2 }}>
+        <Typography variant="body2" color="text.secondary">
           {error ?? "プロジェクトが見つかりません"}
-        </p>
+        </Typography>
         <Button variant="secondary" onClick={() => navigate("/")}>
           ホームへ戻る
         </Button>
-      </div>
+      </Box>
     );
   }
 
   const { config, manuscripts, materials, total_char_count } = currentProject;
 
   return (
-    <div className="h-screen flex flex-col bg-[var(--bg-primary)] overflow-hidden">
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'var(--bg-primary)', overflow: 'hidden' }}>
       {/* メインコンテンツ */}
-      <div className="flex flex-1 overflow-hidden">
+      <Box sx={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         {/* 左ペイン: プロジェクト情報 */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <Box sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
           {/* ヘッダー */}
           <ProjectHeader
             projectId={projectId!}
@@ -85,68 +91,62 @@ export default function ProjectPage() {
           />
 
           {/* 進捗バー */}
-          <section className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-5">
+          <Paper variant="outlined" sx={{ p: 2.5 }}>
             <ProgressBar
               current={total_char_count}
               target={config.target_char_count}
             />
-          </section>
+          </Paper>
 
           {/* 原稿ファイル一覧 */}
-          <section className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-5">
+          <Paper variant="outlined" sx={{ p: 2.5 }}>
             <ChapterList
               projectId={projectId!}
               manuscripts={manuscripts}
               onCreateFile={handleCreateFile}
               onDeleteFile={handleDeleteFile}
             />
-          </section>
+          </Paper>
 
           {/* 最近のAI相談 */}
-          <section className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-5">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[var(--text-primary)] font-medium text-sm">
+          <Paper variant="outlined" sx={{ p: 2.5 }}>
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+              <Typography variant="body1" fontWeight={500} color="text.primary">
                 最近のAI相談
-              </h2>
+              </Typography>
               <Button
                 variant="primary"
                 size="sm"
                 onClick={() => setChatOpen(true)}
-                icon={
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                }
+                icon={<ChatBubbleOutlineIcon sx={{ fontSize: 14 }} />}
               >
                 AI相談を開始
               </Button>
-            </div>
+            </Box>
             <RecentChats materials={materials} />
-          </section>
-        </div>
+          </Paper>
+        </Box>
 
         {/* 右ペイン: チャットパネル（開いている時） */}
         {chatOpen && projectId && (
-          <div className="w-80 border-l border-[var(--border-subtle)] flex flex-col shrink-0">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border-subtle)] shrink-0 bg-[var(--bg-secondary)]">
-              <span className="text-[var(--text-tertiary)] text-xs">AI相談パネル</span>
-              <button
+          <Box sx={{ width: 320, borderLeft: '1px solid', borderColor: 'divider', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1.5, py: 1, borderBottom: '1px solid', borderColor: 'divider', flexShrink: 0, bgcolor: 'var(--bg-secondary)' }}>
+              <Typography variant="caption" color="text.disabled">AI相談パネル</Typography>
+              <IconButton
+                size="small"
                 onClick={() => setChatOpen(false)}
-                className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] p-1 rounded transition-colors"
                 aria-label="パネルを閉じる"
+                sx={{ color: 'text.disabled' }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-hidden">
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>
               <ChatPanel projectId={projectId} />
-            </div>
-          </div>
+            </Box>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

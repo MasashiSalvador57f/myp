@@ -1,3 +1,9 @@
+import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
+import Typography from '@mui/material/Typography';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import { useEditorStore } from '@/stores/editorStore';
 import { Button } from '@/components/ui';
 
@@ -24,12 +30,19 @@ export function EditorToolbar() {
   const isVertical = direction === 'vertical';
 
   return (
-    <header
-      className={[
-        'flex items-center h-12 px-4 bg-[var(--bg-secondary)]',
-        'border-b border-b-[var(--border-subtle)] shrink-0',
-        'select-none gap-2',
-      ].join(' ')}
+    <Box
+      component="header"
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        height: 48,
+        px: 2,
+        bgcolor: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--border-subtle)',
+        flexShrink: 0,
+        userSelect: 'none',
+        gap: 1,
+      }}
     >
       {/* Writing direction toggle */}
       <Button
@@ -38,98 +51,84 @@ export function EditorToolbar() {
         onClick={toggleDirection}
         title={isVertical ? '横書きに切替' : '縦書きに切替'}
       >
-        {isVertical ? (
-          <span className="flex items-center gap-1">
-            <VerticalIcon />
-            <span className="text-xs">縦書き</span>
-          </span>
-        ) : (
-          <span className="flex items-center gap-1">
-            <HorizontalIcon />
-            <span className="text-xs">横書き</span>
-          </span>
-        )}
+        <Box component="span" display="flex" alignItems="center" gap={0.5}>
+          {isVertical ? <VerticalIcon /> : <HorizontalIcon />}
+          <Typography variant="caption">{isVertical ? '縦書き' : '横書き'}</Typography>
+        </Box>
       </Button>
 
-      <Divider />
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1 }} />
 
       {/* Characters per line */}
-      <label className="flex items-center gap-1.5 text-xs text-[var(--text-secondary)]">
-        <span>字/行</span>
-        <input
+      <Box display="flex" alignItems="center" gap={0.75}>
+        <Typography variant="caption" color="text.secondary">字/行</Typography>
+        <TextField
           type="number"
-          min={10}
-          max={80}
+          size="small"
           value={charsPerLine}
           onChange={(e) => {
             const v = parseInt(e.target.value, 10);
             if (!isNaN(v) && v >= 10 && v <= 80) setCharsPerLine(v);
           }}
-          className={[
-            'w-14 h-7 px-2 text-xs text-center rounded-[var(--radius-md)]',
-            'bg-[var(--bg-tertiary)] border border-[var(--border-default)]',
-            'text-[var(--text-primary)]',
-            'focus:outline-none focus:border-[var(--border-focus)]',
-          ].join(' ')}
+          slotProps={{
+            input: {
+              inputProps: { min: 10, max: 80 },
+            },
+          }}
+          sx={{
+            width: 64,
+            '& .MuiOutlinedInput-root': { height: 28 },
+            '& .MuiOutlinedInput-input': { textAlign: 'center', fontSize: '0.75rem', p: '2px 8px' },
+          }}
         />
-      </label>
+      </Box>
 
-      <Divider />
+      <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1 }} />
 
       {/* Font selector */}
-      <select
+      <Select
         value={fontFamily}
         onChange={(e) => setFontFamily(e.target.value)}
-        className={[
-          'h-7 px-2 text-xs rounded-[var(--radius-md)]',
-          'bg-[var(--bg-tertiary)] border border-[var(--border-default)]',
-          'text-[var(--text-primary)]',
-          'focus:outline-none focus:border-[var(--border-focus)]',
-        ].join(' ')}
+        size="small"
+        sx={{
+          height: 28,
+          fontSize: '0.75rem',
+          '& .MuiSelect-select': { py: '2px' },
+        }}
       >
         {FONT_OPTIONS.map((opt) => (
-          <option key={opt.label} value={opt.value}>
+          <MenuItem key={opt.label} value={opt.value} sx={{ fontSize: '0.75rem' }}>
             {opt.label}
-          </option>
+          </MenuItem>
         ))}
-      </select>
+      </Select>
 
       {/* Font size */}
-      <select
+      <Select
         value={fontSize}
-        onChange={(e) => setFontSize(parseInt(e.target.value, 10))}
-        className={[
-          'h-7 px-2 text-xs rounded-[var(--radius-md)]',
-          'bg-[var(--bg-tertiary)] border border-[var(--border-default)]',
-          'text-[var(--text-primary)]',
-          'focus:outline-none focus:border-[var(--border-focus)]',
-        ].join(' ')}
+        onChange={(e) => setFontSize(Number(e.target.value))}
+        size="small"
+        sx={{
+          height: 28,
+          fontSize: '0.75rem',
+          '& .MuiSelect-select': { py: '2px' },
+        }}
       >
         {FONT_SIZE_OPTIONS.map((s) => (
-          <option key={s} value={s}>
+          <MenuItem key={s} value={s} sx={{ fontSize: '0.75rem' }}>
             {s}px
-          </option>
+          </MenuItem>
         ))}
-      </select>
+      </Select>
 
       {/* Spacer */}
-      <div className="flex-1" />
+      <Box sx={{ flex: 1 }} />
 
       {/* Dirty indicator */}
       {isDirty && (
-        <span className="text-xs text-[var(--warning)]">未保存</span>
+        <Typography variant="caption" sx={{ color: 'warning.main' }}>未保存</Typography>
       )}
-    </header>
-  );
-}
-
-function Divider() {
-  return (
-    <div
-      className="w-px h-5 bg-[var(--border-default)] mx-1"
-      role="separator"
-      aria-orientation="vertical"
-    />
+    </Box>
   );
 }
 

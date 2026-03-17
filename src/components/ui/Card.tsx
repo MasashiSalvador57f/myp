@@ -1,39 +1,46 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
+import MuiCard from '@mui/material/Card';
+import MuiCardContent from '@mui/material/CardContent';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
-  /** Adds hover shadow + border effect */
   interactive?: boolean;
-  /** Optional padding override. Defaults to p-5 (20px) */
   padding?: 'none' | 'sm' | 'md' | 'lg';
 }
 
-const paddingStyles = {
-  none: '',
-  sm: 'p-3',
-  md: 'p-5',
-  lg: 'p-6',
+const paddingMap = {
+  none: 0,
+  sm: 1.5,
+  md: 2.5,
+  lg: 3,
 };
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
-  { interactive = false, padding = 'md', children, className = '', ...props },
+  { interactive = false, padding = 'md', children, className = '', onClick, ...props },
   ref,
 ) {
   return (
-    <div
+    <MuiCard
       ref={ref}
-      className={[
-        'bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)]',
-        paddingStyles[padding],
-        interactive &&
-          'cursor-pointer transition-all duration-[var(--duration-normal)] ease-[var(--ease-default)] hover:shadow-[var(--shadow-sm)] hover:border-[var(--border-default)]',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      {...props}
+      variant="outlined"
+      className={className}
+      onClick={onClick}
+      sx={{
+        p: paddingMap[padding],
+        cursor: interactive ? 'pointer' : 'default',
+        transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        ...(interactive && {
+          '&:hover': {
+            boxShadow: 'var(--shadow-sm)',
+            borderColor: 'var(--border-default)',
+          },
+        }),
+      }}
+      {...(props as React.ComponentPropsWithoutRef<typeof MuiCard>)}
     >
       {children}
-    </div>
+    </MuiCard>
   );
 });
 
@@ -44,13 +51,19 @@ interface CardHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> 
 
 export function CardHeader({ title, action, className = '', ...props }: CardHeaderProps) {
   return (
-    <div
-      className={`flex items-center justify-between mb-3 ${className}`}
+    <Box
+      display="flex"
+      alignItems="center"
+      justifyContent="space-between"
+      mb={1.5}
+      className={className}
       {...props}
     >
-      <h3 className="text-[var(--text-primary)] font-medium text-base">{title}</h3>
+      <Typography variant="h3" sx={{ color: 'text.primary', fontWeight: 500, fontSize: '1rem' }}>
+        {title}
+      </Typography>
       {action}
-    </div>
+    </Box>
   );
 }
 
@@ -60,8 +73,12 @@ export function CardContent({
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={`text-[var(--text-secondary)] text-sm ${className}`} {...props}>
+    <MuiCardContent
+      className={className}
+      sx={{ p: 0, '&:last-child': { pb: 0 }, color: 'text.secondary', fontSize: '0.875rem' }}
+      {...(props as React.ComponentPropsWithoutRef<typeof MuiCardContent>)}
+    >
       {children}
-    </div>
+    </MuiCardContent>
   );
 }

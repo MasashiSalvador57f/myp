@@ -1,4 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 import { useEditorStore } from '@/stores/editorStore';
 
 interface EditorLayoutProps {
@@ -40,54 +42,73 @@ export function EditorLayout({
   }, [toggleLeftSidebar, toggleRightSidebar]);
 
   return (
-    <div className="flex flex-col h-screen bg-[var(--bg-primary)]">
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'var(--bg-primary)' }}>
       {/* Toolbar */}
       {toolbar}
 
       {/* Main content: 3-column layout */}
-      <div className="flex flex-1 min-h-0">
+      <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
         {/* Left sidebar - file list */}
-        <aside
-          className={[
-            'shrink-0 border-r border-r-[var(--border-subtle)] bg-[var(--bg-secondary)]',
-            'transition-[width] duration-[var(--duration-slow)] ease-[var(--ease-default)]',
-            'overflow-hidden',
-          ].join(' ')}
-          style={{ width: leftSidebarOpen ? '220px' : '0px' }}
+        <Box
+          component="aside"
+          sx={{
+            flexShrink: 0,
+            borderRight: '1px solid',
+            borderColor: 'divider',
+            bgcolor: 'var(--bg-secondary)',
+            transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+            overflow: 'hidden',
+            width: leftSidebarOpen ? 220 : 0,
+          }}
           aria-hidden={!leftSidebarOpen}
         >
           {leftSidebar}
-        </aside>
+        </Box>
 
         {/* Center editor */}
-        <main className="flex-1 min-w-0">{editor}</main>
+        <Box component="main" sx={{ flex: 1, minWidth: 0 }}>
+          {editor}
+        </Box>
 
         {/* Right panel - AI/materials */}
         {rightPanel && (
-          <aside
-            className={[
-              'shrink-0 border-l border-l-[var(--border-subtle)] bg-[var(--bg-secondary)]',
-              'transition-[width] duration-[var(--duration-slow)] ease-[var(--ease-default)]',
-              'overflow-hidden',
-            ].join(' ')}
-            style={{ width: rightSidebarOpen ? '320px' : '0px' }}
+          <Box
+            component="aside"
+            sx={{
+              flexShrink: 0,
+              borderLeft: '1px solid',
+              borderColor: 'divider',
+              bgcolor: 'var(--bg-secondary)',
+              transition: 'width 300ms cubic-bezier(0.4, 0, 0.2, 1)',
+              overflow: 'hidden',
+              width: rightSidebarOpen ? 320 : 0,
+            }}
             aria-hidden={!rightSidebarOpen}
           >
-            <div className="w-[320px] h-full flex flex-col">
-              <div className="flex items-center justify-between h-12 px-4 border-b border-b-[var(--border-subtle)] shrink-0">
-                <span className="text-sm font-medium text-[var(--text-primary)]">
+            <Box sx={{ width: 320, height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                height: 48,
+                px: 2,
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                flexShrink: 0,
+              }}>
+                <Typography variant="body1" fontWeight={500} color="text.primary">
                   AI相談
-                </span>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4">
-                <p className="text-xs text-[var(--text-tertiary)]">
+                </Typography>
+              </Box>
+              <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
+                <Typography variant="caption" color="text.disabled">
                   AI相談パネル（実装予定）
-                </p>
-              </div>
-            </div>
-          </aside>
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

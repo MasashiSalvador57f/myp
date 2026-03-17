@@ -1,5 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import List from "@mui/material/List";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import IconButton from "@mui/material/IconButton";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import AddIcon from "@mui/icons-material/Add";
 import { Button, Input, Modal } from "../ui";
 import type { ManuscriptFile } from "../../types";
 
@@ -44,77 +54,69 @@ export function ChapterList({
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-[var(--text-primary)] font-medium text-sm">原稿ファイル</h2>
+    <Box>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+        <Typography variant="body1" fontWeight={500} color="text.primary">
+          原稿ファイル
+        </Typography>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setCreateOpen(true)}
-          icon={
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          }
+          icon={<AddIcon sx={{ fontSize: 16 }} />}
         >
           新規ファイル
         </Button>
-      </div>
+      </Box>
 
       {manuscripts.length === 0 ? (
-        <div className="text-center py-8 text-[var(--text-tertiary)] text-sm">
-          <p>原稿ファイルがありません</p>
-          <p className="mt-1 text-xs">「新規ファイル」から作成してください</p>
-        </div>
+        <Box textAlign="center" py={4}>
+          <Typography variant="body2" color="text.disabled">原稿ファイルがありません</Typography>
+          <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
+            「新規ファイル」から作成してください
+          </Typography>
+        </Box>
       ) : (
-        <div className="space-y-1">
+        <List disablePadding>
           {manuscripts.map((file) => (
-            <div
+            <ListItemButton
               key={file.filename}
-              className="flex items-center gap-2 group rounded-[var(--radius-lg)] px-3 py-2 hover:bg-[var(--bg-hover)] transition-colors"
+              onClick={() =>
+                navigate(`/project/${projectId}/editor/${encodeURIComponent(file.filename)}`)
+              }
+              sx={{
+                borderRadius: 'var(--radius-lg)',
+                py: 1,
+                px: 1.5,
+                '& .delete-btn': { opacity: 0 },
+                '&:hover .delete-btn': { opacity: 1 },
+              }}
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className="text-[var(--text-tertiary)] shrink-0"
-              >
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-
-              <button
-                className="flex-1 text-left text-[var(--text-secondary)] text-sm hover:text-[var(--text-primary)] transition-colors truncate"
-                onClick={() =>
-                  navigate(
-                    `/project/${projectId}/editor/${encodeURIComponent(file.filename)}`
-                  )
-                }
-              >
-                {file.filename}
-              </button>
-
-              <span className="text-[var(--text-tertiary)] text-xs shrink-0">
+              <ListItemIcon sx={{ minWidth: 32 }}>
+                <InsertDriveFileOutlinedIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={file.filename}
+                primaryTypographyProps={{ fontSize: '0.875rem', color: 'text.secondary' }}
+              />
+              <Typography variant="caption" color="text.disabled" sx={{ flexShrink: 0, mr: 1 }}>
                 {file.char_count.toLocaleString()}字
-              </span>
-
-              <button
-                className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--text-tertiary)] hover:text-[var(--error)] p-1 rounded"
-                onClick={() => setDeleteTarget(file)}
+              </Typography>
+              <IconButton
+                className="delete-btn"
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDeleteTarget(file);
+                }}
                 aria-label={`${file.filename}を削除`}
+                sx={{ transition: 'opacity 200ms' }}
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14H6L5 6" />
-                </svg>
-              </button>
-            </div>
+                <DeleteOutlineIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </ListItemButton>
           ))}
-        </div>
+        </List>
       )}
 
       {/* 新規ファイル作成モーダル */}
@@ -170,10 +172,10 @@ export function ChapterList({
           </>
         }
       >
-        <p className="text-[var(--text-secondary)]">
+        <Typography variant="body2" color="text.secondary">
           「{deleteTarget?.filename}」を削除しますか？この操作は元に戻せません。
-        </p>
+        </Typography>
       </Modal>
-    </div>
+    </Box>
   );
 }

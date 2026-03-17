@@ -18,6 +18,8 @@ export interface EditorSettings {
   chars_per_line: number;
   /** テーマ "dark" | "light" */
   theme: string;
+  /** カラープリセット ID */
+  color_preset: string;
 }
 
 /** AI設定 (Rust AiSettings に対応) */

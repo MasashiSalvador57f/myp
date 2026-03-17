@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import AppBar from "@mui/material/AppBar";
+import MuiToolbar from "@mui/material/Toolbar";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Paper from "@mui/material/Paper";
 import { Button } from "../components/ui";
 import { Heatmap } from "../components/dashboard/Heatmap";
 import { WeeklyStats } from "../components/dashboard/WeeklyStats";
@@ -13,6 +18,12 @@ import { useWritingLogStore } from "../stores/writingLogStore";
 import { useTheme } from "../components/ui/ThemeProvider";
 import type { MemoInfo } from "../types/memo";
 import * as commands from "../lib/tauri-commands";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
+import SettingsIcon from "@mui/icons-material/Settings";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import IconButton from "@mui/material/IconButton";
 
 export default function HomePage() {
   const { projects, loading: projectLoading, loadProjects, createProject } =
@@ -56,71 +67,37 @@ export default function HomePage() {
   const last7Days = weeklySummary?.days ?? [];
 
   return (
-    <div className="h-screen flex flex-col bg-[var(--bg-primary)] overflow-hidden">
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'var(--bg-primary)', overflow: 'hidden' }}>
       {/* トップバー */}
-      <header className="flex items-center justify-between px-6 py-3 border-b border-[var(--border-subtle)] shrink-0">
-        <div className="flex items-center gap-2">
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            className="text-[var(--accent-primary)]"
-          >
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
-          <h1 className="text-[var(--text-primary)] font-semibold text-base">
+      <AppBar position="static" color="default" elevation={0} sx={{ bgcolor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)' }}>
+        <MuiToolbar variant="dense" sx={{ minHeight: '48px !important', px: 3 }}>
+          <EditIcon sx={{ fontSize: 20, color: 'primary.main', mr: 1 }} />
+          <Typography variant="h3" sx={{ fontWeight: 600, fontSize: '1rem', color: 'text.primary', flexGrow: 0 }}>
             MyPWriter
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
+          </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          <IconButton
+            size="small"
             onClick={toggleTheme}
-            icon={
-              theme === "dark" ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="5" />
-                  <line x1="12" y1="1" x2="12" y2="3" />
-                  <line x1="12" y1="21" x2="12" y2="23" />
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                  <line x1="1" y1="12" x2="3" y2="12" />
-                  <line x1="21" y1="12" x2="23" y2="12" />
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                </svg>
-              )
-            }
             aria-label="テーマ切替"
-          />
-          <Link to="/settings">
+            sx={{ color: 'text.secondary' }}
+          >
+            {theme === "dark" ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+          </IconButton>
+          <Link to="/settings" style={{ textDecoration: 'none' }}>
             <Button
               variant="ghost"
               size="sm"
-              icon={
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                </svg>
-              }
+              icon={<SettingsIcon sx={{ fontSize: 16 }} />}
             >
               設定
             </Button>
           </Link>
-        </div>
-      </header>
+        </MuiToolbar>
+      </AppBar>
 
       {/* メインコンテンツ */}
-      <main className="flex-1 overflow-y-auto p-6 space-y-6">
+      <Box component="main" sx={{ flex: 1, overflowY: 'auto', p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
         {/* 統計サマリー */}
         <section>
           <StatsOverview
@@ -132,87 +109,82 @@ export default function HomePage() {
 
         {/* ヒートマップ */}
         <section>
-          <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-5">
-            <h2 className="text-[var(--text-primary)] font-medium text-sm mb-4">
+          <Paper variant="outlined" sx={{ p: 2.5 }}>
+            <Typography variant="body1" fontWeight={500} color="text.primary" sx={{ mb: 2 }}>
               執筆記録（過去{heatmapPeriodLabel}）
-            </h2>
+            </Typography>
             {logLoading ? (
-              <div className="text-[var(--text-tertiary)] text-sm">読み込み中...</div>
+              <Typography variant="body2" color="text.disabled">読み込み中...</Typography>
             ) : (
               <Heatmap summaries={dailyStats} onPeriodLabelChange={setHeatmapPeriodLabel} />
             )}
-          </div>
+          </Paper>
         </section>
 
         {/* 直近7日 */}
         <section>
-          <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-5">
-            <h2 className="text-[var(--text-primary)] font-medium text-sm mb-4">
+          <Paper variant="outlined" sx={{ p: 2.5 }}>
+            <Typography variant="body1" fontWeight={500} color="text.primary" sx={{ mb: 2 }}>
               直近7日間の執筆量
-            </h2>
+            </Typography>
             <WeeklyStats summaries={last7Days} />
-          </div>
+          </Paper>
         </section>
 
         {/* プロジェクト一覧 */}
         <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[var(--text-primary)] font-medium text-sm">
+          <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+            <Typography variant="body1" fontWeight={500} color="text.primary">
               プロジェクト
-            </h2>
+            </Typography>
             <Button
               variant="primary"
               size="sm"
               onClick={() => setNewProjectOpen(true)}
-              icon={
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              }
+              icon={<AddIcon sx={{ fontSize: 14 }} />}
             >
               新規プロジェクト
             </Button>
-          </div>
+          </Box>
 
           {projectLoading ? (
-            <div className="text-[var(--text-tertiary)] text-sm text-center py-8">
+            <Typography variant="body2" color="text.disabled" textAlign="center" py={4}>
               読み込み中...
-            </div>
+            </Typography>
           ) : projects.length === 0 ? (
-            <div className="text-center py-12 border border-dashed border-[var(--border-default)] rounded-[var(--radius-xl)]">
-              <p className="text-[var(--text-tertiary)] text-sm mb-4">
+            <Box textAlign="center" py={6} sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 'var(--radius-xl)' }}>
+              <Typography variant="body2" color="text.disabled" mb={2}>
                 プロジェクトがありません
-              </p>
+              </Typography>
               <Button
                 variant="primary"
                 onClick={() => setNewProjectOpen(true)}
               >
                 最初のプロジェクトを作成
               </Button>
-            </div>
+            </Box>
           ) : (
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 1.5 }}>
               {projects.map((project) => (
                 <ProjectCard key={project.id} project={project} />
               ))}
-            </div>
+            </Box>
           )}
         </section>
 
         {/* アイデアメモ */}
         <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-[var(--text-primary)] font-medium text-sm">
+          <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+            <Typography variant="body1" fontWeight={500} color="text.primary">
               アイデアメモ
-            </h2>
-          </div>
-          <div className="space-y-3">
+            </Typography>
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <MemoQuickAdd onCreated={loadMemos} />
             <MemoList memos={memos} loading={memoLoading} onDeleted={loadMemos} onUpdated={loadMemos} />
-          </div>
+          </Box>
         </section>
-      </main>
+      </Box>
 
       {/* 新規プロジェクトモーダル */}
       <NewProjectModal
@@ -222,6 +194,6 @@ export default function HomePage() {
           await createProject(name, target);
         }}
       />
-    </div>
+    </Box>
   );
 }

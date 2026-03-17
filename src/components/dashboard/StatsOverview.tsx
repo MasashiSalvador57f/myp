@@ -1,3 +1,7 @@
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import Typography from '@mui/material/Typography';
+
 interface StatsOverviewProps {
   averageChars: number;
   totalLast7Days: number;
@@ -12,15 +16,19 @@ interface StatCardProps {
 
 function StatCard({ label, value, sub }: StatCardProps) {
   return (
-    <div className="bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-xl)] p-4">
-      <div className="text-[var(--text-tertiary)] text-xs mb-1">{label}</div>
-      <div className="text-[var(--text-primary)] text-2xl font-semibold tracking-tight">
+    <Card variant="outlined" sx={{ p: 2 }}>
+      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mb: 0.5 }}>
+        {label}
+      </Typography>
+      <Typography variant="h4" color="text.primary" sx={{ fontWeight: 600, fontSize: '1.5rem', letterSpacing: '-0.02em' }}>
         {value}
-      </div>
+      </Typography>
       {sub && (
-        <div className="text-[var(--text-tertiary)] text-xs mt-0.5">{sub}</div>
+        <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.25 }}>
+          {sub}
+        </Typography>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -30,7 +38,7 @@ export function StatsOverview({
   projectCount,
 }: StatsOverviewProps) {
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.5 }}>
       <StatCard
         label="直近30日 平均執筆量"
         value={`${averageChars.toLocaleString()}字`}
@@ -46,6 +54,6 @@ export function StatsOverview({
         value={`${projectCount}`}
         sub="作成済み"
       />
-    </div>
+    </Box>
   );
 }
