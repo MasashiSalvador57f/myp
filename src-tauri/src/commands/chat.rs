@@ -220,3 +220,59 @@ pub fn read_chat_history(project_id: String, filename: String) -> Result<String,
     std::fs::read_to_string(&path)
         .map_err(|e| format!("チャット履歴の読み込みに失敗 ({filename}): {e}"))
 }
+
+// ─── セッション永続化 (JSON) ─────────────────────────────────────────────────
+
+fn sessions_dir(project_id: &str) -> Result<std::path::PathBuf, String> {
+    let dir = utils::project_dir(project_id)?.join("materials").join("chat").join("sessions");
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("sessions ディレクトリの作成に失敗: {e}"))?;
+    Ok(dir)
+}
+
+/// チャットセッションをJSONで保存する。
+#[tauri::command]
+pub fn save_chat_session(project_id: String, session_json: String) -> Result<(), String> {
+    // session_json からIDを抽出してファイル名にする
+    let val: serde_json::Value = serde_json::from_str(&session_json)
+        .map_err(|e| format!("セッションJSONのパースに失敗: {e}"))?;
+    let id = val.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
+    let dir = sessions_dir(&project_id)?;
+    let path = dir.join(format!("{id}.json"));
+    std::fs::write(&path, session_json.as_bytes())
+        .map_err(|e| format!("セッションの保存に失敗: {e}"))?;
+    Ok(())
+}
+
+/// プロジェクトの全チャットセッションをJSONで読み込む（新しい順）。
+#[tauri::command]
+pub fn load_chat_sessions(project_id: String) -> Result<Vec<String>, String> {
+    let dir = sessions_dir(&project_id)?;
+    if !dir.exists() {
+        return Ok(vec![]);
+    }
+    let mut files: Vec<_> = std::fs::read_dir(&dir)
+        .map_err(|e| format!("sessionsディレクトリの読み込みに失敗: {e}"))?
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map_or(false, |x| x == "json"))
+        .collect();
+    // ファイル名降順 = 新しい順
+    files.sort_by(|a, b| b.file_name().cmp(&a.file_name()));
+    let sessions: Vec<String> = files
+        .iter()
+        .filter_map(|e| std::fs::read_to_string(e.path()).ok())
+        .collect();
+    Ok(sessions)
+}
+
+/// チャットセッションを削除する。
+#[tauri::command]
+pub fn delete_chat_session(project_id: String, session_id: String) -> Result<(), String> {
+    let dir = sessions_dir(&project_id)?;
+    let path = dir.join(format!("{session_id}.json"));
+    if path.exists() {
+        std::fs::remove_file(&path)
+            .map_err(|e| format!("セッションの削除に失敗: {e}"))?;
+    }
+    Ok(())
+}

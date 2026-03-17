@@ -23,6 +23,8 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
     sendMessage,
     startNewSession,
     saveCurrentSession,
+    loadSessionsFromDisk,
+    switchSession,
   } = useChatStore();
 
   const [showHistory, setShowHistory] = useState(false);
@@ -42,6 +44,11 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // 起動時にセッション読み込み
+  useEffect(() => {
+    loadSessionsFromDisk(projectId);
+  }, [projectId, loadSessionsFromDisk]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -106,19 +113,21 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
   };
 
   const handleSelectHistory = (session: ChatSession) => {
-    useChatStore.setState({ currentSession: session });
+    switchSession(session);
     setShowHistory(false);
   };
 
-  // 新規メモとして保存
+  // 新規メモとして保存（チャットリンク付き）
   const handleSaveAsMemo = useCallback(async (content: string) => {
     try {
       const title = content.split("\n")[0].slice(0, 50) || "AI相談メモ";
-      await commands.createMemo(title, content, projectId);
+      const sessionId = currentSession?.id ?? "";
+      const link = sessionId ? `\n\n---\n📎 チャットセッション: ${sessionId}` : "";
+      await commands.createMemo(title, content + link, projectId);
     } catch (e) {
       console.error("メモの作成に失敗:", e);
     }
-  }, [projectId]);
+  }, [projectId, currentSession]);
 
   // 既存メモに追記 — メモ選択モーダルを開く
   const handleOpenAppend = useCallback(async (content: string) => {
@@ -153,20 +162,22 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
     await handleOpenAppend(text);
   }, [selectionToolbar, handleOpenAppend]);
 
-  // 選択したメモに追記
+  // 選択したメモに追記（チャットリンク付き）
   const handleAppendToMemo = useCallback(async (memo: MemoInfo) => {
     try {
       const detail = await commands.readMemo(memo.filename);
+      const sessionId = currentSession?.id ?? "";
+      const link = sessionId ? `\n📎 チャットセッション: ${sessionId}` : "";
       const newBody = detail.body
-        ? `${detail.body}\n\n---\n\n${appendContent}`
-        : appendContent;
+        ? `${detail.body}\n\n---\n\n${appendContent}${link}`
+        : `${appendContent}${link}`;
       await commands.updateMemo(memo.filename, detail.title, newBody, detail.project_id);
       setAppendOpen(false);
       setAppendContent("");
     } catch (e) {
       console.error("メモへの追記に失敗:", e);
     }
-  }, [appendContent]);
+  }, [appendContent, currentSession]);
 
   return (
     <div className="flex flex-col h-full bg-[var(--bg-secondary)]">

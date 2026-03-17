@@ -56,13 +56,24 @@ interface ChatState {
   selectAgent: (agentId: string) => void;
   selectPrompt: (promptId: string | null) => void;
   saveCurrentSession: () => Promise<string | null>;
+  loadSessionsFromDisk: (projectId: string) => Promise<void>;
   loadSessions: (savedSessions: ChatSession[]) => void;
+  switchSession: (session: ChatSession) => void;
   clearCurrentSession: () => void;
   clearError: () => void;
 }
 
 function generateId(): string {
   return `session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+/** セッションをディスクに自動保存 */
+async function persistSession(session: ChatSession) {
+  try {
+    await commands.saveChatSession(session.project_id, JSON.stringify(session));
+  } catch (e) {
+    console.error("セッションの自動保存に失敗:", e);
+  }
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -146,14 +157,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       systemPrompt += `\n\n---\n以下は参照中の原稿テキストです:\n${context}`;
     }
 
-    // Vercel AI SDK でストリーミング送信
     const aiMessages: AIMessage[] = updatedMessages
       .filter((m) => m.role === "user" || m.role === "assistant")
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
     const aiConfig: AIServiceConfig = { provider, apiKey };
 
-    // ストリーミング中のアシスタントメッセージをプレースホルダーとして追加
     const placeholderMessage: ChatMessage = {
       role: "assistant",
       content: "",
@@ -169,7 +178,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       aiConfig,
       systemPrompt,
       aiMessages,
-      // onChunk: ストリーミング中のテキストをリアルタイム更新
       (partialText) => {
         set((s) => {
           if (!s.currentSession) return s;
@@ -181,7 +189,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
           return { currentSession: { ...s.currentSession, messages: msgs } };
         });
       },
-      // onComplete
       (fullText) => {
         set((s) => {
           if (!s.currentSession) return s;
@@ -190,12 +197,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
           if (lastIdx >= 0 && msgs[lastIdx].role === "assistant") {
             msgs[lastIdx] = { ...msgs[lastIdx], content: fullText, timestamp: new Date().toISOString() };
           }
-          return { currentSession: { ...s.currentSession, messages: msgs }, loading: false };
+          const updatedSession = { ...s.currentSession, messages: msgs };
+          // 自動保存 + セッション一覧に追加/更新
+          void persistSession(updatedSession);
+          const existsInSessions = s.sessions.some((ss) => ss.id === updatedSession.id);
+          const newSessions = existsInSessions
+            ? s.sessions.map((ss) => ss.id === updatedSession.id ? updatedSession : ss)
+            : [...s.sessions, updatedSession];
+          return { currentSession: updatedSession, sessions: newSessions, loading: false };
         });
       },
-      // onError
       (error) => {
-        // エラー時はプレースホルダーを削除
         set((s) => {
           if (!s.currentSession) return { error: error.message, loading: false };
           const msgs = s.currentSession.messages.filter(
@@ -225,9 +237,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         currentSession.agent,
         currentSession.messages
       );
-      set((s) => ({
-        sessions: [...s.sessions, currentSession],
-      }));
+      await persistSession(currentSession);
       return filename;
     } catch (e) {
       set({ error: String(e) });
@@ -235,8 +245,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
+  loadSessionsFromDisk: async (projectId: string) => {
+    try {
+      const jsonStrings = await commands.loadChatSessions(projectId);
+      const sessions: ChatSession[] = jsonStrings
+        .map((s) => {
+          try { return JSON.parse(s) as ChatSession; }
+          catch { return null; }
+        })
+        .filter((s): s is ChatSession => s !== null);
+      set({ sessions });
+    } catch {
+      set({ sessions: [] });
+    }
+  },
+
   loadSessions: (savedSessions: ChatSession[]) => {
     set({ sessions: savedSessions });
+  },
+
+  switchSession: (session: ChatSession) => {
+    set({ currentSession: session });
   },
 
   clearCurrentSession: () => set({ currentSession: null }),

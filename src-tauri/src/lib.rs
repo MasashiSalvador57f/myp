@@ -49,6 +49,9 @@ pub fn run() {
             commands::chat::save_chat_history,
             commands::chat::list_chat_histories,
             commands::chat::read_chat_history,
+            commands::chat::save_chat_session,
+            commands::chat::load_chat_sessions,
+            commands::chat::delete_chat_session,
             // ── プロンプト管理 ────────────────────────────────
             commands::prompts::list_preset_prompts,
             commands::prompts::list_custom_prompts,

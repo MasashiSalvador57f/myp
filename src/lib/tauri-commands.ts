@@ -229,6 +229,29 @@ export async function readChatHistory(
   });
 }
 
+/** チャットセッションをJSON保存 */
+export async function saveChatSession(
+  projectId: string,
+  sessionJson: string
+): Promise<void> {
+  return invoke("save_chat_session", { projectId, sessionJson });
+}
+
+/** プロジェクトの全チャットセッションを読み込み */
+export async function loadChatSessions(
+  projectId: string
+): Promise<string[]> {
+  return invoke<string[]>("load_chat_sessions", { projectId });
+}
+
+/** チャットセッションを削除 */
+export async function deleteChatSession(
+  projectId: string,
+  sessionId: string
+): Promise<void> {
+  return invoke("delete_chat_session", { projectId, sessionId });
+}
+
 // ─── アイデアメモ ───
 
 import type { MemoInfo, MemoDetail } from "../types/memo";
