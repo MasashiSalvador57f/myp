@@ -36,7 +36,7 @@ export function ThemeSettings() {
         >
           {THEME_PRESETS.map((preset) => {
             const isSelected = colorPreset === preset.id;
-            const displayColor = preset.colors.primaryDark;
+            const displayColor = preset.previewColor;
 
             return (
               <Box

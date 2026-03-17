@@ -31,45 +31,43 @@ function getInitialPreset(): string {
   return localStorage.getItem(PRESET_STORAGE_KEY) ?? 'default';
 }
 
-/** Apply CSS custom properties for the active color preset */
+/** Apply all CSS custom properties from the active color preset */
 function applyCssVariables(theme: Theme, presetId: string) {
   const preset = getThemePreset(presetId);
-  const c = preset.colors;
+  const c = theme === 'dark' ? preset.dark : preset.light;
   const root = document.documentElement;
 
-  if (theme === 'dark') {
-    root.style.setProperty('--accent-primary', c.primaryDark);
-    root.style.setProperty('--accent-hover', c.primaryDarkLight);
-    root.style.setProperty('--accent-active', c.primaryDarkDark);
-    root.style.setProperty('--accent-subtle', c.accentSubtleDark);
-    root.style.setProperty('--text-accent', c.primaryDark);
-    root.style.setProperty('--border-focus', c.primaryDark);
-  } else {
-    root.style.setProperty('--accent-primary', c.primaryLight);
-    root.style.setProperty('--accent-hover', c.primaryLightDark);
-    root.style.setProperty('--accent-active', c.primaryLightLight);
-    root.style.setProperty('--accent-subtle', c.accentSubtleLight);
-    root.style.setProperty('--text-accent', c.primaryLight);
-    root.style.setProperty('--border-focus', c.primaryLight);
-  }
+  // 背景
+  root.style.setProperty('--bg-primary', c.bgPrimary);
+  root.style.setProperty('--bg-secondary', c.bgSecondary);
+  root.style.setProperty('--bg-tertiary', c.bgTertiary);
+  root.style.setProperty('--bg-elevated', c.bgElevated);
+  root.style.setProperty('--bg-hover', c.bgHover);
+  root.style.setProperty('--bg-active', c.bgActive);
 
-  // Minimal preset — hide borders and shadows
-  if (preset.minimal) {
-    root.style.setProperty('--border-subtle', 'transparent');
-    root.style.setProperty('--border-default', 'transparent');
-    root.style.setProperty('--shadow-sm', 'none');
-    root.style.setProperty('--shadow-md', 'none');
-    root.style.setProperty('--shadow-lg', 'none');
-    root.style.setProperty('--shadow-xl', 'none');
-  } else {
-    // Restore default values based on theme
-    root.style.removeProperty('--border-subtle');
-    root.style.removeProperty('--border-default');
-    root.style.removeProperty('--shadow-sm');
-    root.style.removeProperty('--shadow-md');
-    root.style.removeProperty('--shadow-lg');
-    root.style.removeProperty('--shadow-xl');
-  }
+  // テキスト
+  root.style.setProperty('--text-primary', c.textPrimary);
+  root.style.setProperty('--text-secondary', c.textSecondary);
+  root.style.setProperty('--text-tertiary', c.textTertiary);
+  root.style.setProperty('--text-disabled', c.textDisabled);
+  root.style.setProperty('--text-accent', c.accentPrimary);
+
+  // ボーダー
+  root.style.setProperty('--border-subtle', c.borderSubtle);
+  root.style.setProperty('--border-default', c.borderDefault);
+  root.style.setProperty('--border-strong', c.borderStrong);
+  root.style.setProperty('--border-focus', c.accentPrimary);
+
+  // アクセント
+  root.style.setProperty('--accent-primary', c.accentPrimary);
+  root.style.setProperty('--accent-hover', c.accentHover);
+  root.style.setProperty('--accent-active', c.accentActive);
+  root.style.setProperty('--accent-subtle', c.accentSubtle);
+
+  // 影
+  root.style.setProperty('--shadow-sm', c.shadowSm);
+  root.style.setProperty('--shadow-md', c.shadowMd);
+  root.style.setProperty('--shadow-lg', c.shadowLg);
 }
 
 interface ThemeProviderProps {

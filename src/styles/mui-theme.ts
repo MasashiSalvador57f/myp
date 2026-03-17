@@ -246,7 +246,7 @@ function getMinimalOverrides(): ThemeOptions['components'] {
 
 export function createDarkTheme(presetId: string = 'default') {
   const preset = getThemePreset(presetId);
-  const c = preset.colors;
+  const c = preset.dark;
 
   const minimalOverrides = preset.minimal ? getMinimalOverrides() : {};
 
@@ -255,10 +255,10 @@ export function createDarkTheme(presetId: string = 'default') {
     palette: {
       mode: 'dark',
       primary: {
-        main: c.primaryDark,
-        light: c.primaryDarkLight,
-        dark: c.primaryDarkDark,
-        contrastText: '#0f1017',
+        main: c.accentPrimary,
+        light: c.accentHover,
+        dark: c.accentActive,
+        contrastText: c.bgPrimary,
       },
       secondary: {
         main: '#70a4d4',
@@ -286,18 +286,18 @@ export function createDarkTheme(presetId: string = 'default') {
         dark: '#5a8ec4',
       },
       background: {
-        default: '#0f1017',
-        paper: '#2a2825',
+        default: c.bgPrimary,
+        paper: c.bgElevated,
       },
       text: {
-        primary: '#e8e5e0',
-        secondary: '#a09a90',
-        disabled: '#504c46',
+        primary: c.textPrimary,
+        secondary: c.textSecondary,
+        disabled: c.textDisabled,
       },
-      divider: 'rgba(255, 255, 255, 0.06)',
+      divider: c.borderSubtle,
       action: {
-        hover: 'rgba(255, 255, 255, 0.04)',
-        selected: 'rgba(255, 255, 255, 0.07)',
+        hover: c.bgHover,
+        selected: c.bgActive,
         disabled: 'rgba(255, 255, 255, 0.2)',
         disabledBackground: 'rgba(255, 255, 255, 0.05)',
       },
@@ -309,8 +309,8 @@ export function createDarkTheme(presetId: string = 'default') {
         styleOverrides: {
           root: {
             borderRadius: 'var(--radius-xl)',
-            backgroundColor: '#2a2825',
-            borderColor: 'rgba(255, 255, 255, 0.06)',
+            backgroundColor: c.bgElevated,
+            borderColor: c.borderSubtle,
           },
         },
       },
@@ -320,11 +320,11 @@ export function createDarkTheme(presetId: string = 'default') {
           ...sharedOptions.components?.MuiPaper?.styleOverrides,
           root: {
             backgroundImage: 'none',
-            backgroundColor: '#2a2825',
+            backgroundColor: c.bgElevated,
           },
           outlined: {
             borderRadius: 'var(--radius-xl)',
-            borderColor: 'rgba(255, 255, 255, 0.06)',
+            borderColor: c.borderSubtle,
           },
         },
       },
@@ -333,8 +333,8 @@ export function createDarkTheme(presetId: string = 'default') {
         styleOverrides: {
           root: {
             backgroundImage: 'none',
-            backgroundColor: '#171614',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+            backgroundColor: c.bgSecondary,
+            borderBottom: `1px solid ${c.borderSubtle}`,
           },
         },
       },
@@ -343,11 +343,10 @@ export function createDarkTheme(presetId: string = 'default') {
         styleOverrides: {
           paper: {
             borderRadius: 'var(--radius-2xl)',
-            backgroundColor: '#2a2825',
+            backgroundColor: c.bgElevated,
           },
         },
       },
-      // Apply minimal overrides last so they win
       ...minimalOverrides,
     },
   });
@@ -355,7 +354,7 @@ export function createDarkTheme(presetId: string = 'default') {
 
 export function createLightTheme(presetId: string = 'default') {
   const preset = getThemePreset(presetId);
-  const c = preset.colors;
+  const c = preset.light;
 
   const minimalOverrides = preset.minimal ? getMinimalOverrides() : {};
 
@@ -364,10 +363,10 @@ export function createLightTheme(presetId: string = 'default') {
     palette: {
       mode: 'light',
       primary: {
-        main: c.primaryLight,
-        light: c.primaryLightLight,
-        dark: c.primaryLightDark,
-        contrastText: '#faf8f5',
+        main: c.accentPrimary,
+        light: c.accentHover,
+        dark: c.accentActive,
+        contrastText: c.bgPrimary,
       },
       secondary: {
         main: '#5a8ec4',
@@ -395,18 +394,18 @@ export function createLightTheme(presetId: string = 'default') {
         dark: '#4a7eb4',
       },
       background: {
-        default: '#faf8f5',
-        paper: '#ffffff',
+        default: c.bgPrimary,
+        paper: c.bgElevated,
       },
       text: {
-        primary: '#2a2520',
-        secondary: '#6b6560',
-        disabled: '#c5c0bb',
+        primary: c.textPrimary,
+        secondary: c.textSecondary,
+        disabled: c.textDisabled,
       },
-      divider: 'rgba(0, 0, 0, 0.05)',
+      divider: c.borderSubtle,
       action: {
-        hover: 'rgba(0, 0, 0, 0.03)',
-        selected: 'rgba(0, 0, 0, 0.06)',
+        hover: c.bgHover,
+        selected: c.bgActive,
         disabled: 'rgba(0, 0, 0, 0.2)',
         disabledBackground: 'rgba(0, 0, 0, 0.05)',
       },
@@ -418,8 +417,8 @@ export function createLightTheme(presetId: string = 'default') {
         styleOverrides: {
           root: {
             borderRadius: 'var(--radius-xl)',
-            backgroundColor: '#ffffff',
-            borderColor: 'rgba(0, 0, 0, 0.05)',
+            backgroundColor: c.bgElevated,
+            borderColor: c.borderSubtle,
           },
         },
       },
@@ -429,11 +428,11 @@ export function createLightTheme(presetId: string = 'default') {
           ...sharedOptions.components?.MuiPaper?.styleOverrides,
           root: {
             backgroundImage: 'none',
-            backgroundColor: '#ffffff',
+            backgroundColor: c.bgElevated,
           },
           outlined: {
             borderRadius: 'var(--radius-xl)',
-            borderColor: 'rgba(0, 0, 0, 0.05)',
+            borderColor: c.borderSubtle,
           },
         },
       },
@@ -442,9 +441,9 @@ export function createLightTheme(presetId: string = 'default') {
         styleOverrides: {
           root: {
             backgroundImage: 'none',
-            backgroundColor: '#f2efe9',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
-            color: '#2a2520',
+            backgroundColor: c.bgSecondary,
+            borderBottom: `1px solid ${c.borderSubtle}`,
+            color: c.textPrimary,
           },
         },
       },
@@ -453,11 +452,10 @@ export function createLightTheme(presetId: string = 'default') {
         styleOverrides: {
           paper: {
             borderRadius: 'var(--radius-2xl)',
-            backgroundColor: '#ffffff',
+            backgroundColor: c.bgElevated,
           },
         },
       },
-      // Apply minimal overrides last so they win
       ...minimalOverrides,
     },
   });
