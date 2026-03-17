@@ -134,7 +134,7 @@ export function Editor({ onSave }: EditorProps) {
         <div
           className={[
             isVertical
-              ? 'inline-flex items-start p-8'
+              ? 'flex justify-center items-start p-8'
               : 'h-full flex justify-center p-8',
           ].join(' ')}
           style={isVertical ? { minWidth: '100%', minHeight: '100%' } : undefined}
