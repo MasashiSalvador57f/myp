@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Button, Modal, Input } from "../ui";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
@@ -21,14 +22,21 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
     selectedAgentId,
     loading,
     error,
-    clearError,
-    sendMessage,
-    startNewSession,
-    saveCurrentSession,
-    loadSessionsFromDisk,
-    switchSession,
-    selectAgent,
-  } = useChatStore();
+  } = useChatStore(useShallow((s) => ({
+    currentSession: s.currentSession,
+    sessions: s.sessions,
+    selectedAgentId: s.selectedAgentId,
+    loading: s.loading,
+    error: s.error,
+  })));
+
+  const clearError = useChatStore((s) => s.clearError);
+  const sendMessage = useChatStore((s) => s.sendMessage);
+  const startNewSession = useChatStore((s) => s.startNewSession);
+  const saveCurrentSession = useChatStore((s) => s.saveCurrentSession);
+  const loadSessionsFromDisk = useChatStore((s) => s.loadSessionsFromDisk);
+  const switchSession = useChatStore((s) => s.switchSession);
+  const selectAgent = useChatStore((s) => s.selectAgent);
 
   const allAgents = getAllAgents();
 
@@ -53,11 +61,14 @@ export function ChatPanel({ projectId, manuscriptContext }: ChatPanelProps) {
   // 起動時にセッション読み込み
   useEffect(() => {
     loadSessionsFromDisk(projectId);
-  }, [projectId, loadSessionsFromDisk]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
+  const messageCount = currentSession?.messages.length ?? 0;
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [currentSession?.messages]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messageCount]);
 
   // テキスト選択を検知
   useEffect(() => {

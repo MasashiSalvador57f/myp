@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { ChatSession, ChatMessage, PresetAgent } from "../types";
 import * as commands from "../lib/tauri-commands";
-import { streamChatMessage, type AIMessage, type AIServiceConfig } from "../lib/ai-service";
+import { streamChatMessage, type AIMessage, type AIServiceConfig, type AIUsageResult } from "../lib/ai-service";
 import { getAllAgents } from "../components/settings/AgentSettings";
 
 /** プリセットエージェント定義 */
@@ -472,13 +472,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
           return { currentSession: { ...s.currentSession, messages: msgs } };
         });
       },
-      (fullText) => {
+      (fullText, usageResult: AIUsageResult) => {
         set((s) => {
           if (!s.currentSession) return s;
           const msgs = [...s.currentSession.messages];
           const lastIdx = msgs.length - 1;
           if (lastIdx >= 0 && msgs[lastIdx].role === "assistant") {
-            msgs[lastIdx] = { ...msgs[lastIdx], content: fullText, timestamp: new Date().toISOString() };
+            msgs[lastIdx] = {
+              ...msgs[lastIdx],
+              content: fullText,
+              timestamp: new Date().toISOString(),
+              usage: {
+                model: usageResult.model,
+                promptTokens: usageResult.promptTokens,
+                completionTokens: usageResult.completionTokens,
+                totalTokens: usageResult.totalTokens,
+              },
+            };
           }
           const updatedSession = { ...s.currentSession, messages: msgs };
           // 自動保存 + セッション一覧に追加/更新

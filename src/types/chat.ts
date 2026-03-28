@@ -5,11 +5,25 @@
 /** チャットメッセージのロール */
 export type ChatRole = "user" | "assistant" | "system";
 
+/** AI利用時のメタ情報 */
+export interface AIUsageInfo {
+  /** 使用モデル名 */
+  model: string;
+  /** 入力トークン数 */
+  promptTokens: number;
+  /** 出力トークン数 */
+  completionTokens: number;
+  /** 合計トークン数 */
+  totalTokens: number;
+}
+
 /** チャットメッセージ */
 export interface ChatMessage {
   role: ChatRole;
   content: string;
   timestamp: string;
+  /** AI利用時のメタ情報（assistantメッセージのみ） */
+  usage?: AIUsageInfo;
 }
 
 /** チャットセッション */

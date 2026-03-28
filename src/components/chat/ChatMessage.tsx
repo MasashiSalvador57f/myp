@@ -52,8 +52,15 @@ export function ChatMessage({ message, onSaveAsMemo, onAppendToMemo }: ChatMessa
           )}
         </div>
 
-        <div className="flex items-center gap-2 px-1">
+        <div className="flex items-center gap-2 px-1 flex-wrap">
           <span className="text-[var(--text-tertiary)] text-[10px]">{time}</span>
+
+          {/* モデル・トークン情報 */}
+          {isAssistant && message.usage && (
+            <span className="text-[var(--text-tertiary)] text-[10px]">
+              {message.usage.model} · {message.usage.promptTokens.toLocaleString()}+{message.usage.completionTokens.toLocaleString()}={message.usage.totalTokens.toLocaleString()} tokens
+            </span>
+          )}
 
           {/* AIメッセージのアクションボタン */}
           {isAssistant && message.content && (

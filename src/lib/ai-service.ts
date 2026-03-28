@@ -21,6 +21,13 @@ export interface AIMessage {
   content: string;
 }
 
+export interface AIUsageResult {
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
 /**
  * プロバイダーに応じたモデルを作成
  * - OpenAI: gpt-5
@@ -44,11 +51,12 @@ export async function streamChatMessage(
   systemPrompt: string,
   messages: AIMessage[],
   onChunk: (chunk: string) => void,
-  onComplete: (fullText: string) => void,
+  onComplete: (fullText: string, usage: AIUsageResult) => void,
   onError: (error: Error) => void,
 ): Promise<void> {
   try {
     const model = createModel(config);
+    const modelName = config.provider === 'gemini' ? 'gemini-3-flash-preview' : 'gpt-5';
 
     const result = streamText({
       model,
@@ -59,12 +67,23 @@ export async function streamChatMessage(
       })),
     });
 
+    const streamResult = await result;
     let fullText = '';
-    for await (const chunk of (await result).textStream) {
+    for await (const chunk of streamResult.textStream) {
       fullText += chunk;
       onChunk(fullText);
     }
-    onComplete(fullText);
+
+    const usage = await streamResult.usage;
+    const inputTokens = usage?.inputTokens ?? 0;
+    const outputTokens = usage?.outputTokens ?? 0;
+    const usageResult: AIUsageResult = {
+      model: modelName,
+      promptTokens: inputTokens,
+      completionTokens: outputTokens,
+      totalTokens: usage?.totalTokens ?? (inputTokens + outputTokens),
+    };
+    onComplete(fullText, usageResult);
   } catch (e) {
     onError(e instanceof Error ? e : new Error(String(e)));
   }
